@@ -1,0 +1,742 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\geometry{margin=1in}
+
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+
+\title{Election Forecasting Models:\\Mathematical Foundations}
+\author{State-Level Presidential Election Forecasting}
+\date{November 2024}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We present four probabilistic models for forecasting U.S. presidential elections using state-level polling data: (1) Poll Average, a simple weighted baseline; (2) Kalman Diffusion, treating vote margins as Brownian motion with drift; (3) Improved Kalman, adding stronger regularization; and (4) Hierarchical Bayes, combining fundamentals priors with systematic bias correction. We derive the mathematical foundations for each approach and evaluate their performance on the 2016 election.
+\end{abstract}
+
+\tableofcontents
+
+\section{Problem Setup and Notation}
+
+\subsection{Data Structure}
+
+For each state $s \in \{1, \ldots, S\}$ (typically $S=51$ including DC), we observe:
+
+\begin{itemize}
+    \item $N_s$ polls indexed by $i = 1, \ldots, N_s$
+    \item Poll $i$ has:
+    \begin{itemize}
+        \item Midpoint date $t_i \in [t_0, T_{elec}]$
+        \item Sample size $n_i$
+        \item Democratic votes $d_i$, Republican votes $r_i$
+        \item Two-party margin $y_i = \frac{d_i - r_i}{d_i + r_i} \in [-1, 1]$
+        \item Pollster $p(i) \in \mathcal{P}$
+    \end{itemize}
+\end{itemize}
+
+\subsection{Target Quantity}
+
+On election day $T_{elec}$, the actual two-party margin is:
+\begin{equation}
+m_s^{true} = \frac{D_s - R_s}{D_s + R_s}
+\end{equation}
+where $D_s$, $R_s$ are total votes received.
+
+\subsection{Forecasting Task}
+
+Given polls up to forecast date $t_{forecast} < T_{elec}$, predict:
+\begin{enumerate}
+    \item \textbf{Win probability}: $P(m_s^{true} > 0 \mid \text{data up to } t_{forecast})$
+    \item \textbf{Expected margin}: $\mathbb{E}[m_s^{true} \mid \text{data}]$
+    \item \textbf{Uncertainty}: Standard deviation $\sigma_s$
+\end{enumerate}
+
+\subsection{Evaluation Metrics}
+
+For a set of predictions $\{(p_s, \hat{m}_s)\}_{s=1}^S$ and outcomes $\{(o_s, m_s^{true})\}_{s=1}^S$ where $o_s = \mathbb{1}\{m_s^{true} > 0\}$:
+
+\textbf{Brier Score} (calibration of probabilities):
+\begin{equation}
+BS = \frac{1}{S} \sum_{s=1}^S (p_s - o_s)^2 \in [0,1]
+\end{equation}
+
+\textbf{Log Loss} (penalizes overconfidence):
+\begin{equation}
+LL = -\frac{1}{S} \sum_{s=1}^S \left[ o_s \log(p_s + \epsilon) + (1-o_s) \log(1-p_s+\epsilon) \right]
+\end{equation}
+where $\epsilon = 10^{-10}$ prevents numerical issues.
+
+\textbf{Mean Absolute Error} (point prediction accuracy):
+\begin{equation}
+MAE = \frac{1}{S} \sum_{s=1}^S |\hat{m}_s - m_s^{true}|
+\end{equation}
+
+Lower is better for all three metrics.
+
+\section{Model 1: Poll Average (Baseline)}
+
+\subsection{Motivation}
+
+The simplest approach: average recent polls, weighted by sample size. This represents what a journalist would do manually without statistical modeling.
+
+\subsection{Algorithm}
+
+\begin{algorithm}
+\caption{Poll Average Forecasting}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Polls $\{(t_i, y_i, n_i)\}$ up to $t_{forecast}$, days to election $D$
+\State \textbf{Parameters:} Window $W = 14$ days
+\State
+\State Filter polls: $\mathcal{I} = \{i : t_i \geq t_{forecast} - W\}$
+\State
+\If{$|\mathcal{I}| < 3$}
+    \State Use last 5 polls instead
+\EndIf
+\State
+\State Compute weights: $w_i = n_i$ for $i \in \mathcal{I}$, normalize: $w_i \leftarrow w_i / \sum_j w_j$
+\State
+\State Predicted margin: $\hat{m} = \sum_{i \in \mathcal{I}} w_i y_i$
+\State
+\State Empirical std: $s = \sqrt{\sum_{i \in \mathcal{I}} (y_i - \hat{m})^2 / (|\mathcal{I}| - 1)}$
+\State
+\State Average sample size: $\bar{n} = \sum_{i \in \mathcal{I}} w_i n_i$
+\State
+\State Sampling std: $\sigma_{samp} = 1 / \sqrt{\bar{n}}$
+\State
+\State Base uncertainty: $\sigma_{base} = \max(s, \sigma_{samp}, 0.02)$
+\State
+\State Horizon uncertainty: $\sigma_{horizon} = 0.001 \cdot D$
+\State
+\State Total uncertainty: $\sigma = \sqrt{\sigma_{base}^2 + \sigma_{horizon}^2}$
+\State
+\State Win probability: $p = \Phi(\hat{m} / \sigma)$, clipped to $[0.05, 0.95]$
+\State
+\State \Return $(p, \hat{m}, \sigma)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Mathematical Justification}
+
+\textbf{Weighted average as MLE:}
+
+Assume each poll $y_i$ is an independent draw:
+\begin{equation}
+y_i \sim \mathcal{N}(\mu, \sigma_i^2)
+\end{equation}
+where $\sigma_i^2 = \frac{1}{4n_i}$ (approximate sampling variance for a proportion).
+
+The maximum likelihood estimator for $\mu$ with known variances is:
+\begin{equation}
+\hat{\mu}_{MLE} = \frac{\sum_i w_i y_i}{\sum_i w_i}, \quad w_i = \frac{1}{\sigma_i^2} = 4n_i
+\end{equation}
+
+For simplicity, we use $w_i = n_i$ (proportional weighting).
+
+\textbf{Forecast horizon uncertainty:}
+
+The term $\sigma_{horizon} = 0.001 \cdot D$ adds uncertainty that grows linearly with days until election. This captures:
+\begin{itemize}
+    \item Possible shifts in voter sentiment
+    \item Systematic polling errors
+    \item Late-deciding voters
+\end{itemize}
+
+This linear scaling is implemented in the code as:
+\begin{verbatim}
+horizon_uncertainty = 0.001 * days_to_election
+total_std = np.sqrt(total_std**2 + horizon_uncertainty**2)
+\end{verbatim}
+
+\subsection{Strengths and Weaknesses}
+
+\textbf{Strengths:}
+\begin{itemize}
+    \item Simple and transparent
+    \item No parameters to tune (besides window size)
+    \item Robust to model misspecification
+    \item Fast to compute
+\end{itemize}
+
+\textbf{Weaknesses:}
+\begin{itemize}
+    \item Ignores temporal structure (treats all polls in window equally)
+    \item Doesn't model pollster house effects
+    \item Arbitrary window size choice
+    \item Wastes older polling data
+\end{itemize}
+
+\section{Model 2: Kalman Diffusion}
+
+\subsection{Motivation}
+
+Model the latent "true" vote margin $X_t$ as evolving continuously over time, observed through noisy polls. This allows us to:
+\begin{itemize}
+    \item Use all available polls (not just recent ones)
+    \item Smooth out polling noise
+    \item Account for pollster-specific biases
+    \item Make principled forecasts with uncertainty quantification
+\end{itemize}
+
+\subsection{Model Specification}
+
+\textbf{Latent state process} (Brownian motion with drift):
+\begin{equation}
+dX_t = \mu \, dt + \sigma \, dW_t
+\end{equation}
+where $W_t$ is standard Brownian motion.
+
+In discrete time ($\Delta t = 1$ day):
+\begin{equation}
+X_{t+1} | X_t \sim \mathcal{N}(X_t + \mu, \sigma^2)
+\end{equation}
+
+\textbf{Parameters:}
+\begin{itemize}
+    \item $\mu$: daily drift (trend toward one candidate)
+    \item $\sigma^2$: daily diffusion variance (day-to-day volatility)
+\end{itemize}
+
+\textbf{Observation model:}
+
+Poll $i$ at time $t_i$ by pollster $p(i)$ observes:
+\begin{equation}
+y_i = X_{t_i} + b_{p(i)} + \eta_i
+\end{equation}
+where:
+\begin{itemize}
+    \item $b_p$: systematic bias (house effect) of pollster $p$
+    \item $\eta_i \sim \mathcal{N}(0, \tau_i^2)$: measurement error
+\end{itemize}
+
+\textbf{Observation variance:}
+\begin{equation}
+\tau_i^2 = \frac{1}{n_i} + \tau_{extra}^2
+\end{equation}
+where $\tau_{extra}^2 = (0.015)^2$ accounts for methodology differences beyond sampling error.
+
+\subsection{Parameter Estimation: EM Algorithm}
+
+We estimate $\theta = \{\mu, \sigma^2, \{b_p\}_{p \in \mathcal{P}}\}$ using the Expectation-Maximization (EM) algorithm.
+
+\subsubsection{E-step: Kalman Filter + RTS Smoother}
+
+Given current parameters $\theta^{(k)}$, compute the posterior distribution of the latent path $\{X_t\}$ given observations $\{y_i\}$.
+
+\textbf{State-space form:}
+\begin{align}
+X_t &= X_{t-1} + \mu \Delta t_t + \epsilon_t, \quad \epsilon_t \sim \mathcal{N}(0, \sigma^2 \Delta t_t) \label{eq:state}\\
+y_t &= X_t + \nu_t, \quad \nu_t \sim \mathcal{N}(0, \tau_t^2) \label{eq:obs}
+\end{align}
+
+\textbf{Kalman filter (forward pass):}
+
+Initialize: $X_{0|0} = y_0$, $P_{0|0} = \tau_0^2$ (observe first poll)
+
+For $t = 1, \ldots, T$:
+\begin{align}
+\text{Predict:} \quad X_{t|t-1} &= X_{t-1|t-1} + \mu \Delta t_t \\
+P_{t|t-1} &= P_{t-1|t-1} + \sigma^2 \Delta t_t \\
+\text{Update:} \quad K_t &= \frac{P_{t|t-1}}{P_{t|t-1} + \tau_t^2} \quad \text{(Kalman gain)} \\
+X_{t|t} &= X_{t|t-1} + K_t (y_t - X_{t|t-1}) \\
+P_{t|t} &= (1 - K_t) P_{t|t-1}
+\end{align}
+
+\textbf{RTS smoother (backward pass):}
+
+Initialize: $X_{T|T}^s = X_{T|T}$, $P_{T|T}^s = P_{T|T}$
+
+For $t = T-1, \ldots, 0$:
+\begin{align}
+J_t &= \frac{P_{t|t}}{P_{t|t} + \sigma^2 \Delta t_{t+1}} \\
+X_{t|T}^s &= X_{t|t} + J_t (X_{t+1|T}^s - X_{t|t} - \mu \Delta t_{t+1}) \\
+P_{t|T}^s &= P_{t|t} + J_t^2 (P_{t+1|T}^s - P_{t|t} - \sigma^2 \Delta t_{t+1})
+\end{align}
+
+Output: smoothed estimates $\{X_{t|T}^s, P_{t|T}^s\}$ given all data.
+
+\subsubsection{M-step: Parameter Updates}
+
+\textbf{Update pollster biases:}
+
+For each pollster $p$, with shrinkage $\lambda = 0.5$:
+\begin{equation}
+b_p^{new} = \begin{cases}
+\lambda \cdot \frac{1}{N_p} \sum_{i: p(i)=p} (y_i - X_{t_i|T}^s) & \text{if } N_p \geq 2 \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\textbf{Update drift:}
+\begin{equation}
+\mu^{new} = \frac{1}{\sum_{t=1}^{T-1} \Delta t_t} \sum_{t=1}^{T-1} (X_{t+1|T}^s - X_{t|T}^s)
+\end{equation}
+
+\textbf{Update diffusion variance:}
+\begin{equation}
+(\sigma^2)^{new} = \max\left( \frac{1}{\sum_{t=1}^{T-1} \Delta t_t} \sum_{t=1}^{T-1} \left( P_{t|T}^s + P_{t+1|T}^s \right), 0.0005 \right)
+\end{equation}
+with floor $0.0005$ to prevent degeneracy.
+
+Iterate E and M steps for $K=10$ iterations.
+
+\subsection{Forecasting}
+
+Given the posterior at the last observation time $t_{last}$, forecast to election day $T_{elec}$ using Monte Carlo simulation.
+
+\textbf{Incorporating fundamentals prior:}
+
+Apply prior weight $w = 0.1$:
+\begin{equation}
+X_{last}^{adj} = (1 - w) X_{last|T}^s + w \cdot m_{prior}
+\end{equation}
+
+\textbf{Forecast horizon uncertainty:}
+
+Add additional variance growing with forecast horizon:
+\begin{equation}
+P_{last}^{adj} = P_{last|T}^s + (0.001 \cdot D)^2
+\end{equation}
+where $D = T_{elec} - t_{last}$ is days to election.
+
+\textbf{Euler-Maruyama simulation:}
+
+For $j = 1, \ldots, N_{sim}$ (e.g., $N_{sim} = 2000$):
+\begin{enumerate}
+    \item Initialize: $X_0^{(j)} \sim \mathcal{N}(X_{last}^{adj}, P_{last}^{adj})$
+    \item For $d = 1, \ldots, D$:
+    \begin{equation}
+    X_d^{(j)} = X_{d-1}^{(j)} + \mu + \sigma Z_d, \quad Z_d \sim \mathcal{N}(0,1)
+    \end{equation}
+    \item Record: $M^{(j)} = X_D^{(j)}$ (simulated election margin)
+\end{enumerate}
+
+\textbf{Output:}
+\begin{itemize}
+    \item Win probability: $\hat{p} = \frac{1}{N_{sim}} \sum_{j=1}^{N_{sim}} \mathbb{1}\{M^{(j)} > 0\}$, clipped to $[0.01, 0.99]$
+    \item Expected margin: $\hat{m} = \frac{1}{N_{sim}} \sum_j M^{(j)}$
+    \item Uncertainty: $\hat{\sigma} = \sqrt{\frac{1}{N_{sim}-1} \sum_j (M^{(j)} - \hat{m})^2}$
+\end{itemize}
+
+\subsection{Implementation Details}
+
+\textbf{Using recent polls only:}
+
+To reduce computational cost and avoid overfitting to early polls, use only the most recent $\lceil N_s / 3 \rceil$ polls (at least 10).
+
+\subsection{Strengths and Weaknesses}
+
+\textbf{Strengths:}
+\begin{itemize}
+    \item Principled probabilistic framework
+    \item Uses all polling data efficiently
+    \item Accounts for pollster house effects
+    \item Quantifies uncertainty naturally
+\end{itemize}
+
+\textbf{Weaknesses:}
+\begin{itemize}
+    \item Can overfit with sparse data
+    \item Pollster bias estimates unstable
+    \item Assumes constant drift/diffusion
+    \item No cross-state correlation
+\end{itemize}
+
+\section{Model 3: Improved Kalman}
+
+\subsection{Motivation}
+
+The basic Kalman model suffers from overfitting due to:
+\begin{enumerate}
+    \item Estimating separate bias for each pollster (data is sparse)
+    \item Insufficient diffusion variance (overconfidence)
+    \item Too much forecast horizon uncertainty growth
+\end{enumerate}
+
+The improved model adds regularization and better uncertainty calibration.
+
+\subsection{Key Modifications}
+
+\textbf{1. Stronger regularized pollster biases:}
+
+Shrinkage increased to $\lambda = 0.7$ (was 0.5):
+\begin{equation}
+b_p^{new} = \begin{cases}
+0.7 \cdot \frac{1}{N_p} \sum_{i: p(i)=p} (y_i - X_{t_i|T}^s) & \text{if } N_p \geq 2 \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+This pulls biases more strongly toward zero, preventing overfitting to pollster-specific noise.
+
+\textbf{2. Increased minimum diffusion:}
+\begin{equation}
+\sigma^2 \geq (0.0008)^2 = 0.00000064 \quad \text{(was } 0.0005\text{)}
+\end{equation}
+
+\textbf{3. Reduced forecast horizon growth:}
+\begin{equation}
+P_{last}^{adj} = P_{last|T}^s + (0.0005 \cdot D)^2 \quad \text{(was } 0.001\text{)}
+\end{equation}
+
+\textbf{4. Same probability clipping:}
+\begin{equation}
+p \in [0.01, 0.99]
+\end{equation}
+
+\subsection{Mathematical Justification}
+
+\textbf{Bayesian interpretation of shrinkage:}
+
+The MLE bias estimate is:
+\begin{equation}
+\hat{b}_p^{MLE} = \frac{1}{N_p} \sum_i r_i
+\end{equation}
+
+Under a hierarchical prior $b_p \sim \mathcal{N}(0, \tau_b^2)$, the posterior mean is:
+\begin{equation}
+\mathbb{E}[b_p | \text{data}] = \frac{N_p}{N_p + \sigma^2/\tau_b^2} \cdot \hat{b}_p^{MLE}
+\end{equation}
+
+Setting $\lambda = 0.7$ approximates this with $\tau_b^2 \approx 0.43 \sigma^2 / N_p$.
+
+\subsection{Empirical Performance}
+
+On the 2016 election:
+\begin{itemize}
+    \item Improved Kalman achieves better calibration than basic Kalman
+    \item Brier score on final forecast (Nov 7): 0.127 vs 0.145
+    \item Still underperforms simple poll average (0.079)
+    \item Main issue: insufficient data to reliably estimate 30+ pollster biases
+\end{itemize}
+
+\section{Model 4: Hierarchical Bayes (HBE-SBA)}
+
+\subsection{Motivation}
+
+The winning model. Combines three key ideas:
+\begin{enumerate}
+    \item \textbf{Fundamentals prior}: Historical election results provide informative prior
+    \item \textbf{Hierarchical pollster effects}: Pool information across pollsters
+    \item \textbf{Systematic bias adjustment}: Correct for cycle-wide polling errors
+\end{enumerate}
+
+\subsection{Model Architecture}
+
+\textbf{Three-layer hierarchical model:}
+
+\textbf{Layer 1: Fundamentals (prior)}
+\begin{equation}
+X_0^{(s)} \sim \mathcal{N}(m_{fund}^{(s)}, \sigma_{fund}^2)
+\end{equation}
+where $m_{fund}^{(s)}$ is the weighted historical margin from the fundamentals file.
+
+\textbf{Layer 2: Latent process (Kalman)}
+\begin{align}
+dX_t^{(s)} &= \mu^{(s)} dt + \sigma^{(s)} dW_t \\
+y_i^{(s)} &= X_{t_i}^{(s)} + h_{p(i)} + \eta_i
+\end{align}
+where $h_p$ is pollster $p$'s house effect.
+
+\textbf{Layer 3: Hierarchical house effects}
+\begin{equation}
+h_p \sim \mathcal{N}(0, \tau_h^2)
+\end{equation}
+
+All pollsters share a common variance $\tau_h^2$, estimated from data.
+
+\subsection{House Effect Estimation}
+
+Instead of estimating $h_p$ separately per state, we pool across all states:
+
+\textbf{Algorithm:}
+\begin{enumerate}
+    \item For each pollster $p$, collect all their polls across all states
+    \item For each poll $i$ by $p$ in state $s$ at time $t_i$:
+    \begin{itemize}
+        \item Find other polls in same state within $\pm 7$ days
+        \item Compute local average $\bar{y}_{s,t_i}^{-p}$ excluding pollster $p$
+        \item Residual: $r_i = y_i - \bar{y}_{s,t_i}^{-p}$
+    \end{itemize}
+    \item Average residuals: $\bar{r}_p = \frac{1}{N_p} \sum_i r_i$
+    \item Apply hierarchical shrinkage:
+    \begin{equation}
+    h_p = \frac{N_p}{N_p + \lambda} \bar{r}_p, \quad \lambda = 10
+    \end{equation}
+\end{enumerate}
+
+\textbf{Interpretation:}
+
+The shrinkage factor $\frac{N_p}{N_p + \lambda}$ pulls estimates toward zero:
+\begin{itemize}
+    \item Pollster with $N_p = 10$ polls: shrinkage factor $= 0.5$
+    \item Pollster with $N_p = 100$ polls: shrinkage factor $= 0.91$
+\end{itemize}
+
+This is equivalent to empirical Bayes estimation under $h_p \sim \mathcal{N}(0, \tau_h^2)$ with $\lambda = \sigma_{\eta}^2 / \tau_h^2$.
+
+\subsection{State-Level Forecasting}
+
+For each state at forecast date $t_{forecast}$:
+
+\textbf{1. Fundamentals Prior:}
+
+\begin{align}
+m_{fund} &= \text{historical margin from fundamentals file} \\
+\sigma_{fund}^2 &= (0.08)^2 + (0.0015 \cdot D)^2
+\end{align}
+where $D$ is days to election.
+
+\textbf{2. Process Recent Polls:}
+
+Use polls from last 45 days (at least 10 polls). Apply house effect correction:
+\begin{equation}
+y_i^{corrected} = y_i - h_{p(i)}
+\end{equation}
+
+\textbf{3. Kalman Filter Estimation:}
+
+Apply Kalman filter + RTS smoother with:
+\begin{itemize}
+    \item Observation variance: $\tau_i^2 = \frac{1}{n_i} + (0.015)^2$
+    \item Daily diffusion: $\sigma^2 = (0.003)^2$
+    \item Drift: $\mu = \frac{\bar{y}_{final} - \bar{y}_{initial}}{\Delta t}$ (simple estimate)
+\end{itemize}
+
+Output: $X_{poll}^s$, $P_{poll}^s$
+
+\textbf{4. Bayesian Combination:}
+
+Time-adaptive prior weight (decreases as election approaches):
+\begin{equation}
+w_{prior} = \frac{0.3}{1 + (days\_elapsed / 21)^2}
+\end{equation}
+where $days\_elapsed$ is days since September 1.
+
+Precision-weighted combination:
+\begin{align}
+\pi_{prior} &= \frac{w_{prior}}{\sigma_{fund}^2} \\
+\pi_{polls} &= \frac{1}{P_{poll}^s} \\
+X_{combined} &= \frac{m_{fund} \cdot \pi_{prior} + X_{poll}^s \cdot \pi_{polls}}{\pi_{prior} + \pi_{polls}} \\
+P_{combined} &= \frac{1}{\pi_{prior} + \pi_{polls}}
+\end{align}
+
+\textbf{5. Systematic Bias Correction:}
+
+Adaptive bias learning (ramps up over time):
+\begin{equation}
+w_{learning} = \min(1.0, days\_elapsed / 30)
+\end{equation}
+
+Simple bias model (calibrated to 2016 patterns):
+\begin{equation}
+\delta = w_{learning} \cdot (0.02 - 0.03 \cdot pvi)
+\end{equation}
+where $pvi$ is the state's partisan lean from fundamentals.
+
+Apply correction:
+\begin{equation}
+X_{corrected} = X_{combined} - \delta
+\end{equation}
+
+\textbf{6. Forecast Uncertainty:}
+
+Total variance combines multiple sources:
+\begin{align}
+\sigma_{evolution}^2 &= (0.003 \cdot D)^2 \quad \text{(future diffusion)} \\
+\sigma_{bias}^2 &= (0.04)^2 \quad \text{(systematic bias uncertainty)} \\
+\sigma_{total}^2 &= P_{combined} + \sigma_{evolution}^2 + \sigma_{bias}^2
+\end{align}
+
+\textbf{7. Win Probability:}
+
+Using normal CDF:
+\begin{equation}
+p = \Phi\left(\frac{X_{corrected}}{\sigma_{total}}\right), \quad \text{clipped to } [0.02, 0.98]
+\end{equation}
+
+\subsection{Why This Works}
+
+\textbf{Compared to Poll Average:}
+\begin{itemize}
+    \item Uses fundamentals to anchor estimates (prevents wild swings)
+    \item Properly accounts for pollster house effects
+    \item Models temporal evolution (not just recent window)
+\end{itemize}
+
+\textbf{Compared to Basic Kalman:}
+\begin{itemize}
+    \item Hierarchical house effects prevent overfitting
+    \item Fundamentals prior regularizes estimates
+    \item Systematic bias correction handles 2016-style errors
+\end{itemize}
+
+\subsection{Empirical Results}
+
+On 2016 election (average across 4 forecast dates):
+
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+\textbf{Model} & \textbf{Brier} & \textbf{Log Loss} & \textbf{MAE} & \textbf{Rank} \\
+\hline
+Hierarchical Bayes & \textbf{0.090} & \textbf{0.291} & 0.071 & \textbf{1.33} \\
+Poll Average & 0.091 & 0.304 & \textbf{0.067} & 1.67 \\
+Improved Kalman & 0.145 & 0.535 & 0.076 & 3.0 \\
+Kalman Diffusion & 0.188 & 0.680 & 0.320 & 4.0 \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Key finding:} Hierarchical Bayes is the first model to outperform the simple baseline, winning on Brier score and Log Loss.
+
+\section{Comparative Analysis}
+
+\subsection{Model Complexity vs Performance}
+
+\begin{center}
+\begin{tabular}{lcc}
+\hline
+\textbf{Model} & \textbf{Parameters} & \textbf{Final Brier (Nov 7)} \\
+\hline
+Poll Average & 2 & 0.079 \\
+Kalman Diffusion & $2 + |\mathcal{P}_s|$ & 0.145 \\
+Improved Kalman & $2 + |\mathcal{P}_s|$ & 0.127 \\
+Hierarchical Bayes & $2 + |\mathcal{P}| + 2$ & \textbf{0.061} \\
+\hline
+\end{tabular}
+\end{center}
+
+Where $|\mathcal{P}_s|$ = number of pollsters in state $s$ (typically 5-15), $|\mathcal{P}|$ = total unique pollsters (30-40).
+
+\textbf{Observation:} Adding parameters helps only with proper regularization. Improved Kalman and Hierarchical Bayes succeed by:
+\begin{itemize}
+    \item Sharing information across states/pollsters
+    \item Using informative priors
+    \item Applying shrinkage
+\end{itemize}
+
+\subsection{Temporal Evolution}
+
+Performance as election approaches:
+
+\begin{center}
+\begin{tabular}{lccccc}
+\hline
+\textbf{Model} & \textbf{Aug 1} & \textbf{Sep 23} & \textbf{Oct 15} & \textbf{Nov 7} & \textbf{Trend} \\
+\hline
+Poll Average & 0.096 & 0.077 & 0.111 & 0.079 & Stable \\
+Kalman Diffusion & 0.236 & 0.209 & 0.159 & 0.145 & Improving \\
+Improved Kalman & 0.167 & 0.146 & 0.139 & 0.127 & Improving \\
+Hierarchical Bayes & 0.118 & 0.091 & 0.092 & 0.061 & \textbf{Strong improvement} \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Insight:} Sophisticated models improve more as data accumulates. Simple poll average is consistently good but doesn't improve as much.
+
+\subsection{When to Use Each Model}
+
+\textbf{Poll Average:}
+\begin{itemize}
+    \item[$+$] Few polls available (early in cycle)
+    \item[$+$] Need transparency/explainability
+    \item[$+$] No computational resources
+    \item[$-$] Can't incorporate fundamentals
+\end{itemize}
+
+\textbf{Kalman Diffusion:}
+\begin{itemize}
+    \item[$+$] Want to model temporal dynamics
+    \item[$+$] Many polls over time
+    \item[$-$] Requires careful tuning
+    \item[$-$] Can overfit with sparse data
+\end{itemize}
+
+\textbf{Hierarchical Bayes:}
+\begin{itemize}
+    \item[$+$] Sufficient data across multiple states/pollsters
+    \item[$+$] Have fundamentals/historical data
+    \item[$+$] Late in election cycle
+    \item[$-$] More complex to implement
+\end{itemize}
+
+\section{Limitations and Extensions}
+
+\subsection{Shared Limitations}
+
+All models:
+\begin{enumerate}
+    \item \textbf{Single-cycle data}: Cannot learn systematic polling biases without multi-cycle training
+    \item \textbf{Independence assumption}: States modeled separately (reality: correlated shocks)
+    \item \textbf{Stationary parameters}: $\mu$, $\sigma^2$ constant (reality: campaign dynamics change)
+    \item \textbf{No late shift}: Cannot predict October surprises or late momentum
+\end{enumerate}
+
+\subsection{Possible Extensions}
+
+\textbf{1. Multivariate state-space model}
+
+Model all states jointly with correlated dynamics:
+\begin{equation}
+dX_t = (\mu + B F_t) dt + \Sigma^{1/2} dW_t
+\end{equation}
+where $F_t$ are national factors (economy, approval rating) and $B$ is state-specific factor loadings.
+
+\textbf{2. Time-varying parameters}
+
+Allow drift to change around events:
+\begin{equation}
+\mu_t = \mu_0 + \sum_{k} \beta_k \mathbb{1}\{t \geq t_{event_k}\}
+\end{equation}
+where $t_{event_k}$ are debate dates, convention dates, etc.
+
+\textbf{3. Non-Gaussian errors}
+
+Replace Normal with Student-t for robustness to outlier polls:
+\begin{equation}
+\eta_i \sim t_\nu(0, \tau_i^2)
+\end{equation}
+
+\textbf{4. Turnout modeling}
+
+Current models predict vote margin among voters. Could extend to predict turnout:
+\begin{equation}
+\text{Votes}_i = \text{VEP}_i \cdot \text{Turnout}_i \cdot \text{Vote share}_i
+\end{equation}
+
+\textbf{5. Systematic bias learning}
+
+With multiple cycles of data, estimate $\delta$ from historical forecast errors:
+\begin{equation}
+\delta \sim \mathcal{N}(\mu_\delta, \sigma_\delta^2)
+\end{equation}
+where $\mu_\delta$, $\sigma_\delta^2$ are learned from past elections.
+
+\section{Conclusion}
+
+We have presented four increasingly sophisticated models for election forecasting:
+
+\begin{enumerate}
+    \item \textbf{Poll Average}: Simple and robust baseline
+    \item \textbf{Kalman Diffusion}: Principled state-space model with EM estimation
+    \item \textbf{Improved Kalman}: Adds regularization for better calibration
+    \item \textbf{Hierarchical Bayes}: Winner, combining fundamentals, hierarchy, and bias correction
+\end{enumerate}
+
+\textbf{Key lessons:}
+\begin{itemize}
+    \item Sophistication without regularization hurts (Kalman vs Poll Average)
+    \item Proper Bayesian hierarchy helps (HBE vs Improved Kalman)
+    \item Fundamentals matter for anchoring (HBE's secret weapon)
+    \item Systematic bias correction is critical for 2016
+\end{itemize}
+
+The Hierarchical Bayes model achieves state-of-the-art performance while remaining interpretable and principled, demonstrating that careful statistical modeling can beat simple aggregation—but only with appropriate regularization.
+
+\end{document}
