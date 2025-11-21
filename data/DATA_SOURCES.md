@@ -31,30 +31,6 @@
 
 ---
 
-## Data Coverage
-
-| Data Type | Years | Granularity | States | Source |
-|-----------|-------|-------------|--------|--------|
-| **Election Results** | 1976-2020 | State | 51 | MIT |
-| **Individual Polls** | Nov 2015 - Nov 2016 | State + National | 51 states | FiveThirtyEight |
-
----
-
-## Model Usage
-
-The diffusion forecast model (`forecast_diffusion.py`) uses:
-
-1. **Polls** → Fit latent diffusion process X_t per state
-   - Estimate drift μ and diffusion σ² via EM algorithm
-   - Estimate pollster biases b_p
-   - Kalman filter/RTS smoother for posterior X_t
-
-2. **Results** → Evaluate forecasts
-   - Actual 2016 state-level two-party margins
-   - Compute Brier score, log-loss, MAE
-
----
-
 ## Citations
 
 **MIT Election Data & Science Lab:**
