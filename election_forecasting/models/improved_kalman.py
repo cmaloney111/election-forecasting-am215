@@ -102,7 +102,7 @@ class ImprovedKalmanModel(ElectionForecastModel):
 
         # Win probability with TIGHTER clipping
         win_prob = np.mean(final_margins > 0)
-        win_prob = np.clip(win_prob, 0.01, 0.99)  # Was 0.01-0.99, tightened bounds
+        win_prob = np.clip(win_prob, 0.01, 0.99)
 
         return {
             'win_probability': win_prob,

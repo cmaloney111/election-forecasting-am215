@@ -122,7 +122,7 @@ class HierarchicalBayesModel(ElectionForecastModel):
 
         state_code = state_polls['state_code'].iloc[0]
 
-        # === 1. Get Fundamentals Prior ===
+        # 1. Get Fundamentals Prior
         if state_code in self.fundamentals:
             prior_mean = self.fundamentals[state_code]['margin']
         else:
@@ -131,7 +131,7 @@ class HierarchicalBayesModel(ElectionForecastModel):
         days_to_election = (election_date - forecast_date).days
         prior_var = 0.08**2 + (0.0015 * days_to_election)**2
 
-        # === 2. Process Polls with House Effects ===
+        # 2. Process Polls with House Effects
         # Use recent polls (last 45 days)
         cutoff = forecast_date - pd.Timedelta(days=45)
         recent_polls = state_polls[state_polls['middate'] >= cutoff].copy()
@@ -156,7 +156,7 @@ class HierarchicalBayesModel(ElectionForecastModel):
 
         recent_polls['corrected_margin'] = corrected_margins
 
-        # === 3. Kalman Filter Estimation ===
+        # 3. Kalman Filter Estimation
         polls_sorted = recent_polls.sort_values('middate')
 
         dates = (polls_sorted['middate'] - polls_sorted['middate'].min()).dt.days.values.astype(float)
@@ -169,7 +169,7 @@ class HierarchicalBayesModel(ElectionForecastModel):
 
         poll_mean, poll_var = self.kalman_filter_rts(dates, observations, obs_variance, mu, sigma2)
 
-        # === 4. Bayesian Combination ===
+        # 4. Bayesian Combination
         # Time-adaptive prior weight (decreases as election approaches)
         days_elapsed = (forecast_date - datetime(2016, 9, 1)).days
         w_prior = 0.3 / (1 + (days_elapsed / 21)**2)
@@ -182,7 +182,7 @@ class HierarchicalBayesModel(ElectionForecastModel):
                         (precision_prior + precision_polls)
         combined_var = 1 / (precision_prior + precision_polls)
 
-        # === 5. Systematic Bias Correction ===
+        # 5. Systematic Bias Correction
         # Estimate systematic bias pattern from deviation between polls and fundamentals
         # In 2016, polls overestimated Democrats more in Republican states
         if state_code in self.fundamentals:
@@ -200,7 +200,7 @@ class HierarchicalBayesModel(ElectionForecastModel):
             corrected_mean = combined_mean
             estimated_bias = 0.0
 
-        # === 6. Forecast Uncertainty ===
+        # 6. Forecast Uncertainty
         # Future evolution
         evolution_var = (0.003 * days_to_election)**2
 
@@ -211,7 +211,7 @@ class HierarchicalBayesModel(ElectionForecastModel):
         total_var = combined_var + evolution_var + bias_var
         total_std = np.sqrt(total_var)
 
-        # === 7. Win Probability ===
+        # 7. Win Probability
         win_prob = norm.cdf(corrected_mean / total_std)
         win_prob = np.clip(win_prob, 0.02, 0.98)
 

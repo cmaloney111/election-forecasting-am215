@@ -98,7 +98,7 @@ class KalmanDiffusionModel(ElectionForecastModel):
 
         # EM algorithm
         mu = 0.0
-        sigma2 = 0.0005  # Increased from 0.0001
+        sigma2 = 0.0005
 
         for iteration in range(max_iter):
             x_smooth, P_smooth = self.kalman_filter_smoother(
@@ -152,7 +152,6 @@ class KalmanDiffusionModel(ElectionForecastModel):
 
     def fit_and_forecast(self, state_polls, forecast_date, election_date, actual_margin):
         """Fit Kalman diffusion and forecast election outcome"""
-        # Fit model
         mu, sigma2, pollster_bias, x_smooth, P_smooth, dates = self.fit_state_diffusion(
             state_polls, prior_mean=0.0
         )
