@@ -51,6 +51,13 @@ def main():
     parser = argparse.ArgumentParser(description="Run election forecasting pipeline")
     parser.add_argument("--dates", "-n", type=int, default=4)
     parser.add_argument("--verbose", "-v", action="store_true")
+    parser.add_argument(
+        "--profile",
+        "-p",
+        type=str,
+        metavar="FILE",
+        help="Enable profiling and save to FILE (e.g., pipeline.prof)",
+    )
     args = parser.parse_args()
 
     timings = {}
@@ -58,6 +65,8 @@ def main():
     argv = ["election-forecast", "--dates", str(args.dates)]
     if args.verbose:
         argv.append("--verbose")
+    if args.profile:
+        argv.extend(["--profile", args.profile])
 
     timings["Forecasts"] = run_step(
         1,
