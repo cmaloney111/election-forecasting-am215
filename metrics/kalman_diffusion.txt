@@ -1,97 +1,25 @@
 kalman_diffusion - Evaluation Metrics
-Forecast Date: 2016-09-06
-  States: 41
-  Brier Score: 0.2076
-  Log Loss: 0.6992
-  MAE (Margin): 0.2569
-
-Forecast Date: 2016-09-10
-  States: 44
-  Brier Score: 0.2203
-  Log Loss: 0.7917
-  MAE (Margin): 0.2624
-
-Forecast Date: 2016-09-15
-  States: 44
-  Brier Score: 0.2194
-  Log Loss: 0.7764
-  MAE (Margin): 0.2447
-
-Forecast Date: 2016-09-19
-  States: 45
-  Brier Score: 0.2180
-  Log Loss: 0.7716
-  MAE (Margin): 0.2852
-
 Forecast Date: 2016-09-24
   States: 46
-  Brier Score: 0.2140
-  Log Loss: 0.7572
-  MAE (Margin): 0.2715
-
-Forecast Date: 2016-09-28
-  States: 47
-  Brier Score: 0.1991
-  Log Loss: 0.7020
-  MAE (Margin): 0.2564
-
-Forecast Date: 2016-10-03
-  States: 49
-  Brier Score: 0.1620
-  Log Loss: 0.5539
-  MAE (Margin): 0.2379
-
-Forecast Date: 2016-10-07
-  States: 50
-  Brier Score: 0.1477
-  Log Loss: 0.5187
-  MAE (Margin): 0.2096
-
-Forecast Date: 2016-10-12
-  States: 51
-  Brier Score: 0.1668
-  Log Loss: 0.5984
-  MAE (Margin): 0.2127
+  Brier Score: 0.2149
+  Log Loss: 0.7588
+  MAE (Margin): 0.2709
 
 Forecast Date: 2016-10-16
   States: 51
-  Brier Score: 0.1590
-  Log Loss: 0.5827
-  MAE (Margin): 0.2038
-
-Forecast Date: 2016-10-21
-  States: 51
-  Brier Score: 0.1914
-  Log Loss: 0.7028
-  MAE (Margin): 0.1726
-
-Forecast Date: 2016-10-25
-  States: 51
-  Brier Score: 0.1952
-  Log Loss: 0.7088
-  MAE (Margin): 0.1553
-
-Forecast Date: 2016-10-30
-  States: 51
-  Brier Score: 0.1667
-  Log Loss: 0.6571
-  MAE (Margin): 0.1201
-
-Forecast Date: 2016-11-03
-  States: 51
-  Brier Score: 0.1656
-  Log Loss: 0.6290
-  MAE (Margin): 0.1070
+  Brier Score: 0.1585
+  Log Loss: 0.5787
+  MAE (Margin): 0.2028
 
 Forecast Date: 2016-11-07
   States: 51
-  Brier Score: 0.1433
-  Log Loss: 0.5363
+  Brier Score: 0.1444
+  Log Loss: 0.5424
   MAE (Margin): 0.1026
 
 Forecast Date: 2016-09-01
   States: 36
-  Brier Score: 0.2382
-  Log Loss: 0.8605
-  MAE (Margin): 0.7034
+  Brier Score: 0.2362
+  Log Loss: 0.8421
+  MAE (Margin): 0.7029
 

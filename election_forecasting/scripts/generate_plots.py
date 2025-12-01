@@ -110,7 +110,7 @@ Examples:
     logger.info(f"Found {len(model_classes)} model(s):")
     for name, _ in model_classes:
         logger.info(f"  - {name}")
-    logger.info()
+    logger.info("")
 
     # Generate plots for each model
     total_plots = 0

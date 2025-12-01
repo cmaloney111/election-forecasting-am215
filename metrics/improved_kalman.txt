@@ -1,97 +1,25 @@
 improved_kalman - Evaluation Metrics
-Forecast Date: 2016-09-06
-  States: 41
-  Brier Score: 0.1556
-  Log Loss: 0.5567
-  MAE (Margin): 0.0759
-
-Forecast Date: 2016-09-10
-  States: 44
-  Brier Score: 0.1512
-  Log Loss: 0.5422
-  MAE (Margin): 0.0749
-
-Forecast Date: 2016-09-15
-  States: 44
-  Brier Score: 0.1529
-  Log Loss: 0.5677
-  MAE (Margin): 0.0748
-
-Forecast Date: 2016-09-19
-  States: 45
-  Brier Score: 0.1473
-  Log Loss: 0.5420
-  MAE (Margin): 0.0758
-
 Forecast Date: 2016-09-24
   States: 46
-  Brier Score: 0.1445
-  Log Loss: 0.5300
-  MAE (Margin): 0.0773
-
-Forecast Date: 2016-09-28
-  States: 47
-  Brier Score: 0.1438
-  Log Loss: 0.5253
-  MAE (Margin): 0.0787
-
-Forecast Date: 2016-10-03
-  States: 49
-  Brier Score: 0.1403
-  Log Loss: 0.5110
-  MAE (Margin): 0.0780
-
-Forecast Date: 2016-10-07
-  States: 50
-  Brier Score: 0.1385
-  Log Loss: 0.5071
-  MAE (Margin): 0.0759
-
-Forecast Date: 2016-10-12
-  States: 51
-  Brier Score: 0.1382
-  Log Loss: 0.5147
-  MAE (Margin): 0.0851
+  Brier Score: 0.1443
+  Log Loss: 0.5305
+  MAE (Margin): 0.0776
 
 Forecast Date: 2016-10-16
   States: 51
-  Brier Score: 0.1395
-  Log Loss: 0.5229
-  MAE (Margin): 0.0844
-
-Forecast Date: 2016-10-21
-  States: 51
-  Brier Score: 0.1382
-  Log Loss: 0.5211
-  MAE (Margin): 0.0806
-
-Forecast Date: 2016-10-25
-  States: 51
-  Brier Score: 0.1305
-  Log Loss: 0.4765
-  MAE (Margin): 0.0788
-
-Forecast Date: 2016-10-30
-  States: 51
-  Brier Score: 0.1294
-  Log Loss: 0.4969
-  MAE (Margin): 0.0759
-
-Forecast Date: 2016-11-03
-  States: 51
-  Brier Score: 0.1296
-  Log Loss: 0.5098
-  MAE (Margin): 0.0760
+  Brier Score: 0.1381
+  Log Loss: 0.5155
+  MAE (Margin): 0.0845
 
 Forecast Date: 2016-11-07
   States: 51
-  Brier Score: 0.1270
-  Log Loss: 0.5018
-  MAE (Margin): 0.0761
+  Brier Score: 0.1269
+  Log Loss: 0.5005
+  MAE (Margin): 0.0760
 
 Forecast Date: 2016-09-01
   States: 36
-  Brier Score: 0.1678
-  Log Loss: 0.5923
-  MAE (Margin): 0.0694
+  Brier Score: 0.1671
+  Log Loss: 0.5936
+  MAE (Margin): 0.0696
 
