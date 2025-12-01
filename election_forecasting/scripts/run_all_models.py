@@ -4,7 +4,6 @@ import inspect
 import argparse
 import traceback
 import cProfile
-import pstats
 import pandas as pd
 from datetime import timedelta
 from importlib import resources
@@ -124,7 +123,6 @@ Examples:
 
     args = parser.parse_args()
 
-    # Setup profiling if requested
     if args.profile:
         profiler = cProfile.Profile()
         profiler.enable()
@@ -169,7 +167,6 @@ Examples:
             logger.error(f"ERROR running {model_name}: {e}")
             traceback.print_exc()
 
-    # Save profiling data if enabled
     if args.profile:
         profiler.disable()
         profiler.dump_stats(args.profile)

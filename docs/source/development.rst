@@ -89,14 +89,19 @@ This creates:
 Profiling
 ~~~~~~~~~
 
-Profile model performance:
+Profile model performance using the built-in ``--profile`` flag:
 
 .. code-block:: bash
 
-   python -m cProfile -o output.prof election_forecasting/scripts/run_all_models.py
+   # Profile a quick run with 2 forecast dates
+   election-forecast --profile forecast.prof --dates 2
 
-Analyze with snakeviz:
+   # View the profile with snakeviz
+   snakeviz forecast.prof
+
+Or use the Makefile shortcut:
 
 .. code-block:: bash
 
-   snakeviz output.prof
+   make profile        # Runs forecast with profiling
+   make profile-view   # Opens snakeviz to view results

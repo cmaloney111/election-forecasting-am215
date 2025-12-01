@@ -17,7 +17,7 @@ Model Overview
    * - Poll Average
      - Weighted average of recent polls
      - Low
-     - Baseline
+     - Baseline (yet second best)
    * - Kalman Diffusion
      - Brownian motion with Kalman filter
      - Medium
@@ -28,7 +28,7 @@ Model Overview
      - Better
    * - Hierarchical Bayes
      - Bayesian ensemble with bias correction
-     - High
+     - Highest
      - Best
 
 1. Poll Average Model
@@ -41,7 +41,7 @@ The simplest baseline model that computes a weighted average of recent polls.
 * Uses 14-day polling window
 * Weights polls by sample size
 * Empirical uncertainty estimation
-* Simple horizon adjustment for days until election
+* Simple horizon adjustment for days until election (decrease uncertainty as we approach election)
 
 **File:** ``election_forecasting/models/poll_average.py``
 
@@ -71,8 +71,6 @@ where :math:`\mu` is drift, :math:`\sigma^2` is diffusion variance, and :math:`R
 
 **File:** ``election_forecasting/models/kalman_diffusion.py``
 
-**Use Case:** Smooth time-series forecasting with trend
-
 3. Improved Kalman Model
 -------------------------
 
@@ -92,8 +90,6 @@ Enhanced version of Kalman Diffusion with stronger regularization and better unc
 * Probability clipping: [0.02, 0.98] instead of [0.01, 0.99]
 
 **File:** ``election_forecasting/models/improved_kalman.py``
-
-**Use Case:** More stable forecasts with better calibrated uncertainty
 
 4. Hierarchical Bayes Model (Best)
 -----------------------------------
@@ -122,63 +118,22 @@ The most sophisticated model combining multiple information sources with systema
 
    h_p = \frac{n_p}{n_p + \lambda} \cdot \bar{r}_p
 
-where :math:`h_p` is house effect for pollster :math:`p`, :math:`n_p` is number of polls, :math:`\lambda` is shrinkage parameter, and :math:`\bar{r}_p` is mean residual.
+where :math:`h_p` is house effect for pollster :math:`p`, :math:`n_p` is number of polls, :math:`\lambda` is shrinkage parameter, and :math:`\bar{r}_p` is mean residual. Essentially, if a pollster tends to have very different results compared to other pollsters in a similar time period, shrink their effect.
 
 **File:** ``election_forecasting/models/hierarchical_bayes.py``
-
-**Use Case:** Production-quality forecasts with best predictive accuracy
-
-Model Comparison
-----------------
-
-All models are evaluated using three metrics:
-
-1. **Brier Score:** Measures accuracy of probabilistic forecasts
-
-   .. math::
-
-      \text{Brier} = \frac{1}{N} \sum_{i=1}^N (p_i - y_i)^2
-
-   where :math:`p_i` is predicted win probability and :math:`y_i \in \{0,1\}` is actual outcome.
-
-2. **Log Loss:** Cross-entropy between predictions and outcomes
-
-   .. math::
-
-      \text{LogLoss} = -\frac{1}{N} \sum_{i=1}^N [y_i \log(p_i) + (1-y_i) \log(1-p_i)]
-
-3. **MAE (Margin):** Mean absolute error of margin predictions
-
-   .. math::
-
-      \text{MAE} = \frac{1}{N} \sum_{i=1}^N |m_i^{\text{pred}} - m_i^{\text{actual}}|
-
-Typical Performance (2016 Data)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-On the 2016 election data, the models typically achieve:
-
-* **Hierarchical Bayes:** Brier ~0.08-0.12, MAE ~3-4%
-* **Improved Kalman:** Brier ~0.10-0.14, MAE ~3-5%
-* **Kalman Diffusion:** Brier ~0.12-0.16, MAE ~4-6%
-* **Poll Average:** Brier ~0.14-0.18, MAE ~4-7%
-
-(Results vary by forecast date)
 
 Adding New Models
 -----------------
 
-To add a new forecasting model:
+We have made all scripts scalable so that all one needs to do to add a new forecasting mode is:
 
 1. Create new file in ``election_forecasting/models/``
 2. Inherit from ``ElectionForecastModel`` base class
-3. Implement ``fit_and_forecast()`` method returning:
+3. Implement the ``fit_and_forecast()`` method, which should return:
 
    * ``win_probability``: float in [0,1]
    * ``predicted_margin``: float (Democratic margin)
    * ``margin_std``: float (standard deviation)
-
-4. Add model to ``run_all_models.py``
 
 Example:
 
@@ -186,9 +141,9 @@ Example:
 
    from election_forecasting.models.base_model import ElectionForecastModel
 
-   class MyModel(ElectionForecastModel):
+   class NewModel(ElectionForecastModel):
        def __init__(self):
-           super().__init__("my_model")
+           super().__init__("new_model")
 
        def fit_and_forecast(self, state_polls, forecast_date,
                            election_date, actual_margin):
