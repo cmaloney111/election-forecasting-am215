@@ -6,8 +6,8 @@ sys.path.insert(0, os.path.abspath("../.."))
 
 # Project information
 project = "Election Forecasting"
-copyright = "2024"
-author = "Your Name"
+copyright = "2025"
+author = "Cameron Maloney and Al Liu"
 release = "0.1.0"
 
 # General configuration

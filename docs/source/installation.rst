@@ -33,7 +33,7 @@ Clone the repository and install in development mode:
 
 .. code-block:: bash
 
-   git clone https://github.com/yourusername/election-forecasting.git
+   git clone https://github.com/cmaloney111/election-forecasting-am215.git
    cd election-forecasting
    uv pip install -e .
 
