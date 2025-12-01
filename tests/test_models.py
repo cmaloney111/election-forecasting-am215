@@ -2,10 +2,10 @@
 import pytest
 import pandas as pd
 import numpy as np
-from election_forecasting.models.poll_average import PollAverageModel
-from election_forecasting.models.kalman_diffusion import KalmanDiffusionModel
-from election_forecasting.models.improved_kalman import ImprovedKalmanModel
-from election_forecasting.models.hierarchical_bayes import HierarchicalBayesModel
+from src.models.poll_average import PollAverageModel
+from src.models.kalman_diffusion import KalmanDiffusionModel
+from src.models.improved_kalman import ImprovedKalmanModel
+from src.models.hierarchical_bayes import HierarchicalBayesModel
 
 
 class TestPollAverageModel:

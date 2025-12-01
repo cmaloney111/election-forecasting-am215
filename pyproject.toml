@@ -1,6 +1,6 @@
 [project]
 name = "election-forecasting"
-version = "0.1.0"
+dynamic = ["version"]
 description = "State-level presidential election forecasting models"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -35,17 +35,23 @@ Documentation = "https://election-forecasting.readthedocs.io"
 Issues = "https://github.com/cmaloney111/election-forecasting-am215/issues"
 
 [project.scripts]
-election-forecast = "election_forecasting.scripts.run_all_models:main"
-election-compare = "election_forecasting.scripts.compare_models:main"
-election-plot = "election_forecasting.scripts.generate_plots:main"
-election-run-all = "election_forecasting.scripts.run_all:main"
+election-forecast = "src.scripts.run_all_models:main"
+election-compare = "src.scripts.compare_models:main"
+election-plot = "src.scripts.generate_plots:main"
+election-run-all = "src.scripts.run_all:main"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/_version.py"
+
 [tool.hatch.build.targets.wheel]
-packages = ["election_forecasting"]
+packages = ["src"]
 
 [tool.uv]
 dev-dependencies = [

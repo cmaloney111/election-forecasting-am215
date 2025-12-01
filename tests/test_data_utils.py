@@ -2,7 +2,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from election_forecasting.utils.data_utils import (
+from src.utils.data_utils import (
     load_polling_data,
     load_election_results,
     load_fundamentals,

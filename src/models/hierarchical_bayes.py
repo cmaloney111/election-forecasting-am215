@@ -14,15 +14,15 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 from datetime import datetime
-from election_forecasting.models.base_model import ElectionForecastModel
-from election_forecasting.utils.data_utils import load_fundamentals
+from src.models.base_model import ElectionForecastModel
+from src.utils.data_utils import load_fundamentals
 
 
 class HierarchicalBayesModel(ElectionForecastModel):
     """Hierarchical Bayesian ensemble with bias correction"""
 
-    def __init__(self):
-        super().__init__("hierarchical_bayes")
+    def __init__(self, seed=None):
+        super().__init__("hierarchical_bayes", seed=seed)
         self.fundamentals = load_fundamentals()
         self.house_effects = {}
 
@@ -121,7 +121,7 @@ class HierarchicalBayesModel(ElectionForecastModel):
         return x_smooth[-1], max(P_smooth[-1], 1e-6)
 
     def fit_and_forecast(
-        self, state_polls, forecast_date, election_date, actual_margin
+        self, state_polls, forecast_date, election_date, actual_margin, rng=None
     ):
         """Hierarchical Bayesian forecast with bias correction"""
 
@@ -147,7 +147,7 @@ class HierarchicalBayesModel(ElectionForecastModel):
         # Estimate house effects from broader dataset if not already done
         if not self.house_effects:
             # Load all polls to estimate house effects
-            from election_forecasting.utils.data_utils import load_polling_data
+            from src.utils.data_utils import load_polling_data
 
             all_polls = load_polling_data()
             all_polls = all_polls[all_polls["middate"] <= forecast_date]
@@ -238,7 +238,7 @@ class HierarchicalBayesModel(ElectionForecastModel):
 
 
 if __name__ == "__main__":
-    from election_forecasting.utils.logging_config import setup_logging
+    from src.utils.logging_config import setup_logging
 
     warnings.filterwarnings("ignore")
     setup_logging(__name__)

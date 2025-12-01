@@ -43,7 +43,7 @@ The simplest baseline model that computes a weighted average of recent polls.
 * Empirical uncertainty estimation
 * Simple horizon adjustment for days until election (decrease uncertainty as we approach election)
 
-**File:** ``election_forecasting/models/poll_average.py``
+**File:** ``src/models/poll_average.py``
 
 **Use Case:** Quick baseline forecast, minimal computational cost
 
@@ -69,7 +69,7 @@ Implements a Brownian motion model using Kalman filter with Rauch-Tung-Striebel 
 
 where :math:`\mu` is drift, :math:`\sigma^2` is diffusion variance, and :math:`R_t` is observation noise.
 
-**File:** ``election_forecasting/models/kalman_diffusion.py``
+**File:** ``src/models/kalman_diffusion.py``
 
 3. Improved Kalman Model
 -------------------------
@@ -89,7 +89,7 @@ Enhanced version of Kalman Diffusion with stronger regularization and better unc
 * Pollster bias regularization parameter: :math:`\lambda = 5.0`
 * Probability clipping: [0.02, 0.98] instead of [0.01, 0.99]
 
-**File:** ``election_forecasting/models/improved_kalman.py``
+**File:** ``src/models/improved_kalman.py``
 
 4. Hierarchical Bayes Model (Best)
 -----------------------------------
@@ -120,14 +120,14 @@ The most sophisticated model combining multiple information sources with systema
 
 where :math:`h_p` is house effect for pollster :math:`p`, :math:`n_p` is number of polls, :math:`\lambda` is shrinkage parameter, and :math:`\bar{r}_p` is mean residual. Essentially, if a pollster tends to have very different results compared to other pollsters in a similar time period, shrink their effect.
 
-**File:** ``election_forecasting/models/hierarchical_bayes.py``
+**File:** ``src/models/hierarchical_bayes.py``
 
 Adding New Models
 -----------------
 
 We have made all scripts scalable so that all one needs to do to add a new forecasting mode is:
 
-1. Create new file in ``election_forecasting/models/``
+1. Create new file in ``src/models/``
 2. Inherit from ``ElectionForecastModel`` base class
 3. Implement the ``fit_and_forecast()`` method, which should return:
 
@@ -139,7 +139,7 @@ Example:
 
 .. code-block:: python
 
-   from election_forecasting.models.base_model import ElectionForecastModel
+   from src.models.base_model import ElectionForecastModel
 
    class NewModel(ElectionForecastModel):
        def __init__(self):

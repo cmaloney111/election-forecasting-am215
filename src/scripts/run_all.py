@@ -7,9 +7,9 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 
-from election_forecasting.scripts.run_all_models import main as forecast_main
-from election_forecasting.scripts.compare_models import main as compare_main
-from election_forecasting.scripts.generate_plots import main as plot_main
+from src.scripts.run_all_models import main as forecast_main
+from src.scripts.compare_models import main as compare_main
+from src.scripts.generate_plots import main as plot_main
 
 console = Console()
 
@@ -58,6 +58,13 @@ def main():
         metavar="FILE",
         help="Enable profiling and save to FILE (e.g., pipeline.prof)",
     )
+    parser.add_argument(
+        "--seed",
+        "-s",
+        type=int,
+        metavar="SEED",
+        help="Random seed for reproducibility (default: None for non-deterministic)",
+    )
     args = parser.parse_args()
 
     timings = {}
@@ -67,6 +74,8 @@ def main():
         argv.append("--verbose")
     if args.profile:
         argv.extend(["--profile", args.profile])
+    if args.seed is not None:
+        argv.extend(["--seed", str(args.seed)])
 
     timings["Forecasts"] = run_step(
         1,

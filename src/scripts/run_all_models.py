@@ -8,9 +8,9 @@ import pandas as pd
 from datetime import timedelta
 from importlib import resources
 
-import election_forecasting.models as models_package
-from election_forecasting.models.base_model import ElectionForecastModel
-from election_forecasting.utils.logging_config import setup_logging, get_logger
+import src.models as models_package
+from src.models.base_model import ElectionForecastModel
+from src.utils.logging_config import setup_logging, get_logger
 
 logger = get_logger(__name__)
 
@@ -36,7 +36,7 @@ def discover_models():
 
             # Import the module
             module_name = (
-                f"election_forecasting.models.{item.name[:-3]}"  # gets rid of .py
+                f"src.models.{item.name[:-3]}"  # gets rid of .py
             )
             try:
                 module = importlib.import_module(module_name)
@@ -120,6 +120,13 @@ Examples:
         metavar="FILE",
         help="Enable profiling and save to FILE (e.g., forecast.prof)",
     )
+    parser.add_argument(
+        "--seed",
+        "-s",
+        type=int,
+        metavar="SEED",
+        help="Random seed for reproducibility (default: None for non-deterministic)",
+    )
 
     args = parser.parse_args()
 
@@ -127,7 +134,6 @@ Examples:
         profiler = cProfile.Profile()
         profiler.enable()
 
-    # Setup logging
     setup_logging(__name__, level="DEBUG" if args.verbose else "INFO")
 
     forecast_dates = generate_forecast_dates(args.dates)
@@ -142,7 +148,7 @@ Examples:
     model_classes = discover_models()
 
     if not model_classes:
-        logger.warning("No models found in election_forecasting.models")
+        logger.warning("No models found in src.models")
         return
 
     logger.info(f"Found {len(model_classes)} model(s)")
@@ -154,7 +160,7 @@ Examples:
         logger.info(f"\nRunning: {model_name}")
 
         try:
-            model = ModelClass()
+            model = ModelClass(seed=args.seed)
             pred_df = model.run_forecast(
                 forecast_dates=forecast_dates, verbose=args.verbose
             )

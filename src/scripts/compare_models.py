@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 import glob
-from election_forecasting.utils.logging_config import setup_logging, get_logger
+from src.utils.logging_config import setup_logging, get_logger
 
 logger = get_logger(__name__)
 

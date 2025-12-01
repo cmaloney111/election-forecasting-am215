@@ -8,25 +8,32 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 from abc import ABC, abstractmethod
-from election_forecasting.utils.data_utils import (
+from src.utils.data_utils import (
     load_polling_data,
     load_election_results,
     compute_metrics,
 )
-from election_forecasting.utils.logging_config import get_logger
+from src.utils.logging_config import get_logger
 
 
 class ElectionForecastModel(ABC):
     """Abstract base class for election forecasting models"""
 
-    def __init__(self, name):
+    def __init__(self, name, seed=None):
+        """Initialize the model
+
+        Args:
+            name: Model name
+            seed: Random seed for reproducibility (default: None for non-deterministic)
+        """
         self.name = name
         self.predictions = []
         self.logger = get_logger(f"{__name__}.{name}")
+        self.rng = np.random.default_rng(seed)
 
     @abstractmethod
     def fit_and_forecast(
-        self, state_polls, forecast_date, election_date, actual_margin
+        self, state_polls, forecast_date, election_date, actual_margin, rng=None
     ):
         """
         Fit model on polls up to forecast_date and predict election outcome.
@@ -107,6 +114,7 @@ class ElectionForecastModel(ABC):
                         forecast_date,
                         election_date,
                         actual_margin.get(state),
+                        rng=self.rng,
                     )
 
                     self.predictions.append(

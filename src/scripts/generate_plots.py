@@ -16,10 +16,10 @@ import pandas as pd
 from importlib import resources
 from pathlib import Path
 
-import election_forecasting.models as models_package
-from election_forecasting.models.base_model import ElectionForecastModel
-from election_forecasting.utils.logging_config import setup_logging, get_logger
-from election_forecasting.utils.data_utils import load_polling_data
+import src.models as models_package
+from src.models.base_model import ElectionForecastModel
+from src.utils.logging_config import setup_logging, get_logger
+from src.utils.data_utils import load_polling_data
 
 logger = get_logger(__name__)
 

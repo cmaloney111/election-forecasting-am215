@@ -7,17 +7,17 @@ Weighted average of recent polls with empirical uncertainty
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
-from election_forecasting.models.base_model import ElectionForecastModel
+from src.models.base_model import ElectionForecastModel
 
 
 class PollAverageModel(ElectionForecastModel):
     """Simple weighted poll average baseline"""
 
-    def __init__(self):
-        super().__init__("poll_average")
+    def __init__(self, seed=None):
+        super().__init__("poll_average", seed=seed)
 
     def fit_and_forecast(
-        self, state_polls, forecast_date, election_date, actual_margin
+        self, state_polls, forecast_date, election_date, actual_margin, rng=None
     ):
         """Compute weighted poll average with empirical uncertainty"""
         window_days = 14
@@ -58,7 +58,7 @@ class PollAverageModel(ElectionForecastModel):
 
 
 if __name__ == "__main__":
-    from election_forecasting.utils.logging_config import setup_logging
+    from src.utils.logging_config import setup_logging
 
     setup_logging(__name__)
 

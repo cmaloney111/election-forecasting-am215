@@ -89,18 +89,6 @@ This creates:
 Profiling
 ~~~~~~~~~
 
-Profile model performance using the built-in ``--profile`` flag:
-
-.. code-block:: bash
-
-   # Profile a quick run with 2 forecast dates
-   election-forecast --profile forecast.prof --dates 2
-
-   # View the profile with snakeviz
-   snakeviz forecast.prof
-
-Or use the Makefile shortcut:
-
 .. code-block:: bash
 
    make profile        # Runs forecast with profiling

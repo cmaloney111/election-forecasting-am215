@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from election_forecasting.models.base_model import ElectionForecastModel
+from src.models.base_model import ElectionForecastModel
 
 
 class MockModel(ElectionForecastModel):

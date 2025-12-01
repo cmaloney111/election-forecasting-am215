@@ -55,4 +55,3 @@ Test that the installation worked:
 .. code-block:: bash
 
    election-forecast --help
-   python -c "import election_forecasting; print(election_forecasting.__file__)"

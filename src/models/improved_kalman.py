@@ -11,14 +11,14 @@ Key improvements over basic Kalman:
 
 import warnings
 import numpy as np
-from election_forecasting.models.base_model import ElectionForecastModel
+from src.models.base_model import ElectionForecastModel
 
 
 class ImprovedKalmanModel(ElectionForecastModel):
     """Improved Kalman filter diffusion model"""
 
-    def __init__(self):
-        super().__init__("improved_kalman")
+    def __init__(self, seed=None):
+        super().__init__("improved_kalman", seed=seed)
 
     def kalman_filter_rts(self, dates, observations, obs_variance, mu, sigma2):
         """Kalman filter + RTS smoother"""
@@ -59,7 +59,7 @@ class ImprovedKalmanModel(ElectionForecastModel):
         return x_smooth[-1], max(P_smooth[-1], 1e-6)
 
     def fit_and_forecast(
-        self, state_polls, forecast_date, election_date, actual_margin
+        self, state_polls, forecast_date, election_date, actual_margin, rng=None
     ):
         """Fit improved Kalman diffusion and forecast"""
 
@@ -108,10 +108,10 @@ class ImprovedKalmanModel(ElectionForecastModel):
 
         # Simulate forward
         final_margins = self.simulate_forward(
-            poll_mean, P_current, mu, sigma2, days_to_election, N=2000
+            poll_mean, P_current, mu, sigma2, days_to_election, N=2000, rng=rng
         )
 
-        # Win probability with TIGHTER clipping
+        # Win probability with tighter clipping
         win_prob = np.mean(final_margins > 0)
         win_prob = np.clip(win_prob, 0.01, 0.99)
 
@@ -121,23 +121,39 @@ class ImprovedKalmanModel(ElectionForecastModel):
             "margin_std": np.std(final_margins),
         }
 
-    def simulate_forward(self, x_start, P_start, mu, sigma2, days, N=2000):
-        """Simulate forward with Euler-Maruyama"""
+    def simulate_forward(self, x_start, P_start, mu, sigma2, days, N=2000, rng=None):
+        """Simulate forward with Euler-Maruyama
+
+        Args:
+            x_start: Initial state estimate
+            P_start: Initial state variance
+            mu: Drift parameter
+            sigma2: Diffusion variance
+            days: Number of days to simulate forward
+            N: Number of simulation samples
+            rng: NumPy random generator (default: None uses default_rng)
+
+        Returns:
+            Array of final margin values (length N)
+        """
+        if rng is None:
+            rng = np.random.default_rng()
+
         X = np.zeros((N, days + 1))
-        X[:, 0] = np.random.normal(x_start, np.sqrt(max(P_start, 0)), N)
+        X[:, 0] = rng.normal(x_start, np.sqrt(max(P_start, 0)), N)
 
         dt = 1.0
         for t in range(days):
             drift = mu * dt
             diffusion = np.sqrt(max(sigma2 * dt, 0))
-            dW = np.random.normal(0, 1, N)
+            dW = rng.normal(0, 1, N)
             X[:, t + 1] = X[:, t] + drift + diffusion * dW
 
         return X[:, -1]
 
 
 if __name__ == "__main__":
-    from election_forecasting.utils.logging_config import setup_logging
+    from src.utils.logging_config import setup_logging
 
     warnings.filterwarnings("ignore")
     setup_logging(__name__)

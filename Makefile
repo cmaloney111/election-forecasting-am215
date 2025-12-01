@@ -11,7 +11,7 @@ test:
 	uv run pytest tests/ -v
 
 test-cov:
-	uv run pytest tests/ --cov=election_forecasting --cov-report=html --cov-report=term --cov-report=xml -v
+	uv run pytest tests/ --cov=src --cov-report=html --cov-report=term --cov-report=xml -v
 
 docs:
 	uv run sphinx-build -b html docs/source docs/build/html

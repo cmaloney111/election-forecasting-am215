@@ -82,7 +82,7 @@ You can also use the models directly in Python:
 
 .. code-block:: python
 
-   from election_forecasting.models.hierarchical_bayes import HierarchicalBayesModel
+   from src.models.hierarchical_bayes import HierarchicalBayesModel
    import pandas as pd
 
    # Initialize model
