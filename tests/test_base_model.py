@@ -1,9 +1,8 @@
 """Tests for base model class"""
+
 import pytest
 import pandas as pd
-import numpy as np
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from src.models.base_model import ElectionForecastModel
 
 
@@ -13,7 +12,9 @@ class MockModel(ElectionForecastModel):
     def __init__(self):
         super().__init__("mock_model")
 
-    def fit_and_forecast(self, state_polls, forecast_date, election_date, actual_margin):
+    def fit_and_forecast(
+        self, state_polls, forecast_date, election_date, actual_margin, rng=None
+    ):
         """Simple mock forecast"""
         avg_margin = state_polls["margin"].mean()
         return {
@@ -32,8 +33,8 @@ class TestElectionForecastModel:
         assert model.name == "mock_model"
         assert model.predictions == []
 
-    @patch("election_forecasting.models.base_model.load_polling_data")
-    @patch("election_forecasting.models.base_model.load_election_results")
+    @patch("src.models.base_model.load_polling_data")
+    @patch("src.models.base_model.load_election_results")
     def test_load_data(self, mock_results, mock_polls):
         """Test data loading"""
         mock_polls.return_value = pd.DataFrame({"state_code": ["FL"]})
@@ -51,7 +52,9 @@ class TestElectionForecastModel:
         """Test basic forecast run"""
         model = MockModel()
 
-        with patch.object(model, "load_data", return_value=(sample_polls, sample_actual_results)):
+        with patch.object(
+            model, "load_data", return_value=(sample_polls, sample_actual_results)
+        ):
             forecast_dates = [pd.to_datetime("2016-10-15")]
             result = model.run_forecast(forecast_dates=forecast_dates, min_polls=5)
 
@@ -66,7 +69,9 @@ class TestElectionForecastModel:
         """Test that states with insufficient polls are filtered"""
         model = MockModel()
 
-        with patch.object(model, "load_data", return_value=(sample_polls, sample_actual_results)):
+        with patch.object(
+            model, "load_data", return_value=(sample_polls, sample_actual_results)
+        ):
             forecast_dates = [pd.to_datetime("2016-10-15")]
             result = model.run_forecast(forecast_dates=forecast_dates, min_polls=100)
 
@@ -81,18 +86,24 @@ class TestElectionForecastModel:
 
         model = MockModel()
 
-        with patch.object(model, "load_data", return_value=(sample_polls, sample_actual_results)):
+        with patch.object(
+            model, "load_data", return_value=(sample_polls, sample_actual_results)
+        ):
             forecast_dates = [pd.to_datetime("2016-10-15")]
             model.run_forecast(forecast_dates=forecast_dates, min_polls=5, verbose=True)
 
         assert "Processing" in caplog.text
 
-    def test_save_results(self, sample_polls, sample_actual_results, tmp_path, monkeypatch):
+    def test_save_results(
+        self, sample_polls, sample_actual_results, tmp_path, monkeypatch
+    ):
         """Test saving results"""
         monkeypatch.chdir(tmp_path)
         model = MockModel()
 
-        with patch.object(model, "load_data", return_value=(sample_polls, sample_actual_results)):
+        with patch.object(
+            model, "load_data", return_value=(sample_polls, sample_actual_results)
+        ):
             forecast_dates = [pd.to_datetime("2016-10-15")]
             model.run_forecast(forecast_dates=forecast_dates, min_polls=5)
             metrics_df = model.save_results()
@@ -101,13 +112,20 @@ class TestElectionForecastModel:
         assert (tmp_path / "metrics" / "mock_model.txt").exists()
         assert isinstance(metrics_df, pd.DataFrame)
 
-    def test_plot_state_creates_file(self, sample_polls, sample_actual_results, tmp_path, monkeypatch):
+    def test_plot_state_creates_file(
+        self, sample_polls, sample_actual_results, tmp_path, monkeypatch
+    ):
         """Test that plot_state creates output file"""
         monkeypatch.chdir(tmp_path)
         model = MockModel()
 
-        with patch.object(model, "load_data", return_value=(sample_polls, sample_actual_results)):
-            forecast_dates = [pd.to_datetime("2016-10-15"), pd.to_datetime("2016-11-01")]
+        with patch.object(
+            model, "load_data", return_value=(sample_polls, sample_actual_results)
+        ):
+            forecast_dates = [
+                pd.to_datetime("2016-10-15"),
+                pd.to_datetime("2016-11-01"),
+            ]
             model.run_forecast(forecast_dates=forecast_dates, min_polls=5)
             model.plot_state("FL")
 
@@ -123,4 +141,4 @@ class TestElectionForecastModel:
                 def __init__(self):
                     super().__init__("incomplete")
 
-            model = IncompleteModel()
+            _model = IncompleteModel()

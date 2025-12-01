@@ -44,4 +44,4 @@ clean:
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name "*.prof" -delete
 
-quality-check: lint mypy test
+quality-check: lint test

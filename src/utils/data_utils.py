@@ -2,6 +2,7 @@
 """
 Shared data loading and preprocessing utilities
 """
+
 from typing import Dict, List
 
 import pandas as pd
@@ -158,7 +159,7 @@ def load_fundamentals() -> Dict[str, Dict[str, float]]:
             fundamentals[state] = {
                 "margin": margins_2012[state],
                 "margin_2012": margins_2012[state],
-                "margin_2008": None,
+                "margin_2008": 0.0,  # Default to 0.0 instead of None
             }
 
     return fundamentals

@@ -35,9 +35,7 @@ def discover_models():
                 continue
 
             # Import the module
-            module_name = (
-                f"src.models.{item.name[:-3]}"  # gets rid of .py
-            )
+            module_name = f"src.models.{item.name[:-3]}"  # gets rid of .py
             try:
                 module = importlib.import_module(module_name)
 

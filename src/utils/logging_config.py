@@ -1,11 +1,14 @@
 """Logging configuration for election forecasting"""
+
 import logging
 import sys
 from pathlib import Path
 from typing import Optional
 
 
-def setup_logging(name: str, level: str = "INFO", log_file: Optional[str] = None) -> logging.Logger:
+def setup_logging(
+    name: str, level: str = "INFO", log_file: Optional[str] = None
+) -> logging.Logger:
     """
     Setup logging configuration
 
@@ -25,7 +28,8 @@ def setup_logging(name: str, level: str = "INFO", log_file: Optional[str] = None
 
     # Create formatter
     formatter = logging.Formatter(
-        "[%(asctime)s] %(name)s - %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        "[%(asctime)s] %(name)s - %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
     # Console handler

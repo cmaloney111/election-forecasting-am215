@@ -1,8 +1,8 @@
 """Pytest configuration and fixtures"""
+
 import pytest
 import pandas as pd
 import numpy as np
-from pathlib import Path
 
 
 @pytest.fixture
@@ -11,17 +11,19 @@ def sample_polls():
     dates = pd.date_range("2016-09-01", "2016-11-01", freq="3D")
     n_polls = len(dates)
 
-    return pd.DataFrame({
-        "middate": dates,
-        "state_code": ["FL"] * n_polls,
-        "dem": np.random.uniform(0.45, 0.50, n_polls),
-        "rep": np.random.uniform(0.45, 0.50, n_polls),
-        "margin": np.random.uniform(-0.05, 0.05, n_polls),
-        "dem_proportion": np.random.uniform(0.48, 0.52, n_polls),
-        "samplesize": np.random.randint(500, 1500, n_polls),
-        "pollster": [f"Pollster{i % 3}" for i in range(n_polls)],
-        "state": ["Florida"] * n_polls,
-    })
+    return pd.DataFrame(
+        {
+            "middate": dates,
+            "state_code": ["FL"] * n_polls,
+            "dem": np.random.uniform(0.45, 0.50, n_polls),
+            "rep": np.random.uniform(0.45, 0.50, n_polls),
+            "margin": np.random.uniform(-0.05, 0.05, n_polls),
+            "dem_proportion": np.random.uniform(0.48, 0.52, n_polls),
+            "samplesize": np.random.randint(500, 1500, n_polls),
+            "pollster": [f"Pollster{i % 3}" for i in range(n_polls)],
+            "state": ["Florida"] * n_polls,
+        }
+    )
 
 
 @pytest.fixture

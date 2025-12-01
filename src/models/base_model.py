@@ -2,6 +2,7 @@
 """
 Base class for election forecasting models
 """
+
 from typing import Dict, List, Optional, Tuple, Any
 
 import numpy as np
@@ -39,7 +40,7 @@ class ElectionForecastModel(ABC):
         forecast_date: pd.Timestamp,
         election_date: pd.Timestamp,
         actual_margin: float,
-        rng: Optional[np.random.Generator] = None
+        rng: Optional[np.random.Generator] = None,
     ) -> Dict[str, float]:
         """
         Fit model on polls up to forecast_date and predict election outcome.
@@ -79,7 +80,7 @@ class ElectionForecastModel(ABC):
         self,
         forecast_dates: Optional[List[pd.Timestamp]] = None,
         min_polls: int = 10,
-        verbose: bool = False
+        verbose: bool = False,
     ) -> pd.DataFrame:
         """
         Run forecast across multiple dates and states
@@ -129,11 +130,12 @@ class ElectionForecastModel(ABC):
                     continue
 
                 try:
+                    state_margin = actual_margin.get(state, 0.0)
                     result = self.fit_and_forecast(
                         train_polls,
                         forecast_date,
                         election_date,
-                        actual_margin.get(state),
+                        state_margin,
                         rng=self.rng,
                     )
 
@@ -148,7 +150,9 @@ class ElectionForecastModel(ABC):
                         }
                     )
                 except Exception as e:
-                    self.logger.error(f"Error in {state} on {forecast_date.date()}: {e}")
+                    self.logger.error(
+                        f"Error in {state} on {forecast_date.date()}: {e}"
+                    )
                     continue
 
         return pd.DataFrame(self.predictions)

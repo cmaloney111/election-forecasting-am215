@@ -1,5 +1,5 @@
 """Tests for data utility functions"""
-import pytest
+
 import pandas as pd
 import numpy as np
 from src.utils.data_utils import (
@@ -116,13 +116,15 @@ class TestComputeMetrics:
 
     def test_compute_metrics_basic(self):
         """Test basic metrics computation"""
-        pred_df = pd.DataFrame({
-            "forecast_date": [pd.to_datetime("2016-10-15")] * 5,
-            "state": ["FL", "PA", "MI", "WI", "NC"],
-            "win_probability": [0.6, 0.4, 0.45, 0.3, 0.55],
-            "predicted_margin": [0.02, -0.01, -0.005, -0.02, 0.01],
-            "actual_margin": [0.012, -0.007, -0.002, -0.008, -0.036],
-        })
+        pred_df = pd.DataFrame(
+            {
+                "forecast_date": [pd.to_datetime("2016-10-15")] * 5,
+                "state": ["FL", "PA", "MI", "WI", "NC"],
+                "win_probability": [0.6, 0.4, 0.45, 0.3, 0.55],
+                "predicted_margin": [0.02, -0.01, -0.005, -0.02, 0.01],
+                "actual_margin": [0.012, -0.007, -0.002, -0.008, -0.036],
+            }
+        )
 
         metrics = compute_metrics(pred_df)
         assert isinstance(metrics, pd.DataFrame)
@@ -130,42 +132,54 @@ class TestComputeMetrics:
 
     def test_compute_metrics_columns(self):
         """Test that metrics have required columns"""
-        pred_df = pd.DataFrame({
-            "forecast_date": [pd.to_datetime("2016-10-15")] * 3,
-            "state": ["FL", "PA", "MI"],
-            "win_probability": [0.6, 0.4, 0.5],
-            "predicted_margin": [0.02, -0.01, 0.0],
-            "actual_margin": [0.012, -0.007, -0.002],
-        })
+        pred_df = pd.DataFrame(
+            {
+                "forecast_date": [pd.to_datetime("2016-10-15")] * 3,
+                "state": ["FL", "PA", "MI"],
+                "win_probability": [0.6, 0.4, 0.5],
+                "predicted_margin": [0.02, -0.01, 0.0],
+                "actual_margin": [0.012, -0.007, -0.002],
+            }
+        )
 
         metrics = compute_metrics(pred_df)
-        required_cols = ["forecast_date", "n_states", "brier_score", "log_loss", "mae_margin"]
+        required_cols = [
+            "forecast_date",
+            "n_states",
+            "brier_score",
+            "log_loss",
+            "mae_margin",
+        ]
         for col in required_cols:
             assert col in metrics.columns
 
     def test_compute_metrics_multiple_dates(self):
         """Test metrics computation for multiple forecast dates"""
-        pred_df = pd.DataFrame({
-            "forecast_date": [pd.to_datetime("2016-10-15")] * 3
-            + [pd.to_datetime("2016-11-01")] * 3,
-            "state": ["FL", "PA", "MI"] * 2,
-            "win_probability": [0.6, 0.4, 0.5] * 2,
-            "predicted_margin": [0.02, -0.01, 0.0] * 2,
-            "actual_margin": [0.012, -0.007, -0.002] * 2,
-        })
+        pred_df = pd.DataFrame(
+            {
+                "forecast_date": [pd.to_datetime("2016-10-15")] * 3
+                + [pd.to_datetime("2016-11-01")] * 3,
+                "state": ["FL", "PA", "MI"] * 2,
+                "win_probability": [0.6, 0.4, 0.5] * 2,
+                "predicted_margin": [0.02, -0.01, 0.0] * 2,
+                "actual_margin": [0.012, -0.007, -0.002] * 2,
+            }
+        )
 
         metrics = compute_metrics(pred_df)
         assert len(metrics) == 2
 
     def test_compute_metrics_brier_score_range(self):
         """Test that Brier score is in valid range [0, 1]"""
-        pred_df = pd.DataFrame({
-            "forecast_date": [pd.to_datetime("2016-10-15")] * 3,
-            "state": ["FL", "PA", "MI"],
-            "win_probability": [0.6, 0.4, 0.5],
-            "predicted_margin": [0.02, -0.01, 0.0],
-            "actual_margin": [0.012, -0.007, -0.002],
-        })
+        pred_df = pd.DataFrame(
+            {
+                "forecast_date": [pd.to_datetime("2016-10-15")] * 3,
+                "state": ["FL", "PA", "MI"],
+                "win_probability": [0.6, 0.4, 0.5],
+                "predicted_margin": [0.02, -0.01, 0.0],
+                "actual_margin": [0.012, -0.007, -0.002],
+            }
+        )
 
         metrics = compute_metrics(pred_df)
         assert 0 <= metrics["brier_score"].iloc[0] <= 1

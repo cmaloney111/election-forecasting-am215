@@ -1,4 +1,5 @@
 """Tests for forecasting models"""
+
 import pytest
 import pandas as pd
 import numpy as np
@@ -179,10 +180,12 @@ class TestHierarchicalBayesModel:
         model = HierarchicalBayesModel()
 
         # Create multi-state polls for house effect estimation
-        multi_state_polls = pd.concat([
-            sample_polls,
-            sample_polls.copy().assign(state_code="PA"),
-        ])
+        multi_state_polls = pd.concat(
+            [
+                sample_polls,
+                sample_polls.copy().assign(state_code="PA"),
+            ]
+        )
 
         house_effects = model.estimate_house_effects(multi_state_polls)
 
@@ -224,7 +227,12 @@ class TestHierarchicalBayesModel:
 
 @pytest.mark.parametrize(
     "model_class",
-    [PollAverageModel, KalmanDiffusionModel, ImprovedKalmanModel, HierarchicalBayesModel],
+    [
+        PollAverageModel,
+        KalmanDiffusionModel,
+        ImprovedKalmanModel,
+        HierarchicalBayesModel,
+    ],
 )
 class TestAllModels:
     """Common tests for all models"""
@@ -235,13 +243,17 @@ class TestAllModels:
         assert isinstance(model.name, str)
         assert len(model.name) > 0
 
-    def test_model_can_run_full_forecast(self, model_class, sample_polls, sample_actual_results):
+    def test_model_can_run_full_forecast(
+        self, model_class, sample_polls, sample_actual_results
+    ):
         """Test that model can run full forecast pipeline"""
         model = model_class()
 
         from unittest.mock import patch
 
-        with patch.object(model, "load_data", return_value=(sample_polls, sample_actual_results)):
+        with patch.object(
+            model, "load_data", return_value=(sample_polls, sample_actual_results)
+        ):
             forecast_dates = [pd.to_datetime("2016-10-15")]
             result = model.run_forecast(forecast_dates=forecast_dates, min_polls=5)
 
