@@ -1,4 +1,4 @@
-.PHONY: lint test test-cov docs clean build upload upload-test
+.PHONY: lint test test-cov docs clean build upload upload-test profile profile-view
 
 lint:
 	uv run ruff check .
@@ -25,6 +25,14 @@ upload-test:
 
 upload:
 	uv run twine upload dist/*
+
+profile:
+	uv run python -m cProfile -o election_forecast.prof -m election_forecasting.scripts.run_all_models --dates 2
+	@echo "\nProfile saved to election_forecast.prof"
+	@echo "View with: make profile-view"
+
+profile-view:
+	uv run snakeviz election_forecast.prof
 
 clean:
 	rm -rf .pytest_cache .ruff_cache htmlcov .coverage coverage.xml

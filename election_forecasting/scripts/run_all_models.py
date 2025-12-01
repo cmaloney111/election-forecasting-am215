@@ -3,6 +3,8 @@ import importlib
 import inspect
 import argparse
 import traceback
+import cProfile
+import pstats
 import pandas as pd
 from datetime import timedelta
 from importlib import resources
@@ -112,8 +114,20 @@ Examples:
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose output"
     )
+    parser.add_argument(
+        "--profile",
+        "-p",
+        type=str,
+        metavar="FILE",
+        help="Enable profiling and save to FILE (e.g., forecast.prof)",
+    )
 
     args = parser.parse_args()
+
+    # Setup profiling if requested
+    if args.profile:
+        profiler = cProfile.Profile()
+        profiler.enable()
 
     # Setup logging
     setup_logging(__name__, level="DEBUG" if args.verbose else "INFO")
@@ -154,6 +168,13 @@ Examples:
         except Exception as e:
             logger.error(f"ERROR running {model_name}: {e}")
             traceback.print_exc()
+
+    # Save profiling data if enabled
+    if args.profile:
+        profiler.disable()
+        profiler.dump_stats(args.profile)
+        logger.info(f"\nProfiling data saved to {args.profile}")
+        logger.info(f"View with: snakeviz {args.profile}")
 
 
 if __name__ == "__main__":
