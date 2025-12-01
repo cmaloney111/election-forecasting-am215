@@ -167,7 +167,6 @@ class TestRegressionWithSeed:
 
 
 @pytest.mark.slow
-@pytest.mark.skip(reason="Baseline files need to be generated first")
 class TestRegressionAgainstBaseline:
     """Test that model outputs haven't changed from baseline (slower tests)"""
 
@@ -192,6 +191,9 @@ class TestRegressionAgainstBaseline:
             pytest.skip(
                 "No baseline predictions found - run test_save_new_baselines first"
             )
+
+        # Convert forecast_date to datetime for comparison
+        baseline["forecast_date"] = pd.to_datetime(baseline["forecast_date"])
 
         model = HierarchicalBayesModel(seed=42)
         predictions = model.run_forecast(forecast_dates=forecast_dates, min_polls=5)

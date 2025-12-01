@@ -65,6 +65,13 @@ def main():
         metavar="SEED",
         help="Random seed for reproducibility (default: None for non-deterministic)",
     )
+    parser.add_argument(
+        "--parallel",
+        "-w",
+        type=int,
+        metavar="WORKERS",
+        help="Number of parallel workers for state-level parallelization (default: None for sequential)",
+    )
     args = parser.parse_args()
 
     timings = {}
@@ -76,6 +83,8 @@ def main():
         argv.extend(["--profile", args.profile])
     if args.seed is not None:
         argv.extend(["--seed", str(args.seed)])
+    if args.parallel is not None:
+        argv.extend(["--parallel", str(args.parallel)])
 
     timings["Forecasts"] = run_step(
         1,

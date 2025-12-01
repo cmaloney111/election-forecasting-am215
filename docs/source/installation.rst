@@ -55,3 +55,25 @@ Test that the installation worked:
 .. code-block:: bash
 
    election-forecast --help
+
+Docker Installation
+-------------------
+
+Run the forecasting models using Docker (no local Python installation required):
+
+.. code-block:: bash
+
+   # Build the image
+   docker build -t election-forecasting .
+
+   # Run with default settings
+   docker run -v $(pwd)/predictions:/app/predictions \
+              -v $(pwd)/metrics:/app/metrics \
+              election-forecasting
+
+   # Run with custom options
+   docker run -v $(pwd)/predictions:/app/predictions \
+              -v $(pwd)/metrics:/app/metrics \
+              election-forecasting election-forecast --dates 8 --parallel 4
+
+The Docker container includes all dependencies and data files. Volume mounts ensure results are saved to your host machine.

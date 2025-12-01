@@ -5,7 +5,7 @@ Weighted average of recent polls with empirical uncertainty
 """
 
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 from scipy.stats import norm
 from src.models.base_model import ElectionForecastModel
 

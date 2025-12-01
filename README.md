@@ -6,10 +6,29 @@ State-level presidential election forecasting using polling time-series data fro
 
 ## Installation
 
+### Local Installation
 ```bash
 # Install with uv
 uv pip install -e .
 ```
+
+### Docker
+```bash
+# Build the Docker image
+docker build -t election-forecasting .
+
+# Run forecasts in container
+docker run -v $(pwd)/predictions:/app/predictions \
+           -v $(pwd)/metrics:/app/metrics \
+           election-forecasting election-forecast --dates 8
+
+# Run with parallel execution (utilize host CPU cores)
+docker run -v $(pwd)/predictions:/app/predictions \
+           -v $(pwd)/metrics:/app/metrics \
+           election-forecasting election-forecast --dates 16 --parallel 4
+```
+
+The Docker setup automatically mounts volumes for `predictions/` and `metrics/` so results persist on your host machine.
 
 ## Usage
 
@@ -34,7 +53,15 @@ election-forecast --dates n
 
 # Run with verbose output
 election-forecast -v
+
+# Run with parallel execution (recommended for many dates)
+election-forecast --dates 16 --parallel 4
+
+# Set random seed for reproducibility
+election-forecast --seed 42
 ```
+
+**Parallel Execution:** Use `--parallel N` (or `-w N`) to enable multi-core processing. The workload is parallelized by forecast date, so this is most beneficial when using many dates (e.g., 8+). With 4 workers and 8+ dates, you can see significant speedup on multi-core machines.
 
 #### Compare Model Performance
 ```bash

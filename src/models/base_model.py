@@ -4,9 +4,10 @@ Base class for election forecasting models
 """
 
 from typing import Dict, List, Optional, Tuple, Any
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 import matplotlib.pyplot as plt
 from pathlib import Path
 from abc import ABC, abstractmethod
@@ -76,11 +77,61 @@ class ElectionForecastModel(ABC):
         actual_margin = load_election_results()
         return polls, actual_margin
 
+    def _forecast_single_date(
+        self,
+        forecast_date: pd.Timestamp,
+        polls: pd.DataFrame,
+        actual_margin: Dict[str, float],
+        election_date: pd.Timestamp,
+        min_polls: int,
+        states: List[str],
+    ) -> List[Dict[str, Any]]:
+        """Helper method to forecast all states for a single date (for parallelization)"""
+        results = []
+        for state in states:
+            state_polls = polls[polls["state_code"] == state].copy()
+            if len(state_polls) < min_polls:
+                continue
+
+            train_polls = state_polls[state_polls["middate"] <= forecast_date].copy()
+            if len(train_polls) < min_polls:
+                continue
+
+            days_to_election = (election_date - forecast_date).days
+            if days_to_election <= 0:
+                continue
+
+            try:
+                state_margin = actual_margin.get(state, 0.0)
+                result = self.fit_and_forecast(
+                    train_polls,
+                    forecast_date,
+                    election_date,
+                    state_margin,
+                    rng=self.rng,
+                )
+
+                results.append(
+                    {
+                        "state": state,
+                        "forecast_date": forecast_date,
+                        "win_probability": result["win_probability"],
+                        "predicted_margin": result["predicted_margin"],
+                        "margin_std": result.get("margin_std", np.nan),
+                        "actual_margin": actual_margin.get(state, np.nan),
+                    }
+                )
+            except Exception as e:
+                self.logger.error(f"Error in {state} on {forecast_date.date()}: {e}")
+
+        return results
+
     def run_forecast(
         self,
         forecast_dates: Optional[List[pd.Timestamp]] = None,
         min_polls: int = 10,
         verbose: bool = False,
+        n_workers: Optional[int] = None,
     ) -> pd.DataFrame:
         """
         Run forecast across multiple dates and states
@@ -89,6 +140,7 @@ class ElectionForecastModel(ABC):
             forecast_dates: List of pd.Timestamp dates to forecast from (default: 4 dates in Oct-Nov 2016)
             min_polls: Minimum number of polls required to forecast a state
             verbose: If True, print processing status for each state
+            n_workers: Number of parallel workers (default: None for sequential, >1 for parallel)
 
         Returns:
             DataFrame with columns: state, forecast_date, win_probability, predicted_margin, margin_std, actual_margin
@@ -110,50 +162,88 @@ class ElectionForecastModel(ABC):
 
         self.predictions = []
 
-        for state in states:
-            state_polls = polls[polls["state_code"] == state].copy()
-            if len(state_polls) < min_polls:
-                continue
-
-            if verbose:
-                self.logger.info(f"Processing {state}: {len(state_polls)} polls")
-
-            for forecast_date in forecast_dates:
-                train_polls = state_polls[
-                    state_polls["middate"] <= forecast_date
-                ].copy()
-                if len(train_polls) < min_polls:
+        # Choose execution mode based on n_workers parameter
+        if n_workers is None or n_workers <= 1:
+            # Sequential execution (original code path)
+            for state in states:
+                state_polls = polls[polls["state_code"] == state].copy()
+                if len(state_polls) < min_polls:
                     continue
 
-                days_to_election = (election_date - forecast_date).days
-                if days_to_election <= 0:
-                    continue
+                if verbose:
+                    self.logger.info(f"Processing {state}: {len(state_polls)} polls")
 
-                try:
-                    state_margin = actual_margin.get(state, 0.0)
-                    result = self.fit_and_forecast(
-                        train_polls,
+                for forecast_date in forecast_dates:
+                    train_polls = state_polls[
+                        state_polls["middate"] <= forecast_date
+                    ].copy()
+                    if len(train_polls) < min_polls:
+                        continue
+
+                    days_to_election = (election_date - forecast_date).days
+                    if days_to_election <= 0:
+                        continue
+
+                    try:
+                        state_margin = actual_margin.get(state, 0.0)
+                        result = self.fit_and_forecast(
+                            train_polls,
+                            forecast_date,
+                            election_date,
+                            state_margin,
+                            rng=self.rng,
+                        )
+
+                        self.predictions.append(
+                            {
+                                "state": state,
+                                "forecast_date": forecast_date,
+                                "win_probability": result["win_probability"],
+                                "predicted_margin": result["predicted_margin"],
+                                "margin_std": result.get("margin_std", np.nan),
+                                "actual_margin": actual_margin.get(state, np.nan),
+                            }
+                        )
+                    except Exception as e:
+                        self.logger.error(
+                            f"Error in {state} on {forecast_date.date()}: {e}"
+                        )
+                        continue
+        else:
+            # Parallel execution using ProcessPoolExecutor (parallelized by date)
+            with ProcessPoolExecutor(max_workers=n_workers) as executor:
+                futures = {}
+                for forecast_date in forecast_dates:
+                    if verbose:
+                        self.logger.info(
+                            f"Submitting forecast for {forecast_date.date()}"
+                        )
+
+                    future = executor.submit(
+                        self._forecast_single_date,
                         forecast_date,
+                        polls,
+                        actual_margin,
                         election_date,
-                        state_margin,
-                        rng=self.rng,
+                        min_polls,
+                        states,
                     )
+                    futures[future] = forecast_date
 
-                    self.predictions.append(
-                        {
-                            "state": state,
-                            "forecast_date": forecast_date,
-                            "win_probability": result["win_probability"],
-                            "predicted_margin": result["predicted_margin"],
-                            "margin_std": result.get("margin_std", np.nan),
-                            "actual_margin": actual_margin.get(state, np.nan),
-                        }
-                    )
-                except Exception as e:
-                    self.logger.error(
-                        f"Error in {state} on {forecast_date.date()}: {e}"
-                    )
-                    continue
+                # Collect results as they complete
+                for future in as_completed(futures):
+                    forecast_date = futures[future]
+                    try:
+                        date_results = future.result()
+                        self.predictions.extend(date_results)
+                        if verbose:
+                            self.logger.info(
+                                f"Completed {forecast_date.date()} ({len(date_results)} predictions)"
+                            )
+                    except Exception as e:
+                        self.logger.error(
+                            f"Failed to process {forecast_date.date()}: {e}"
+                        )
 
         return pd.DataFrame(self.predictions)
 

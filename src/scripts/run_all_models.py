@@ -4,7 +4,7 @@ import inspect
 import argparse
 import traceback
 import cProfile
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 from datetime import timedelta
 from importlib import resources
 
@@ -95,10 +95,12 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  election-forecast              # Default: 4 forecast dates
+  election-forecast              # Default: 4 forecast dates, sequential
   election-forecast --dates 8    # Use 8 forecast dates
   election-forecast -n 16        # Use 16 forecast dates
   election-forecast -v           # Verbose output
+  election-forecast --parallel 4 # Use 4 parallel workers
+  election-forecast -w 8         # Use 8 parallel workers
         """,
     )
     parser.add_argument(
@@ -124,6 +126,13 @@ Examples:
         type=int,
         metavar="SEED",
         help="Random seed for reproducibility (default: None for non-deterministic)",
+    )
+    parser.add_argument(
+        "--parallel",
+        "-w",
+        type=int,
+        metavar="WORKERS",
+        help="Number of parallel workers for state-level parallelization (default: None for sequential)",
     )
 
     args = parser.parse_args()
@@ -160,7 +169,9 @@ Examples:
         try:
             model = ModelClass(seed=args.seed)
             pred_df = model.run_forecast(
-                forecast_dates=forecast_dates, verbose=args.verbose
+                forecast_dates=forecast_dates,
+                verbose=args.verbose,
+                n_workers=args.parallel,
             )
             metrics_df = model.save_results()
 

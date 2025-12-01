@@ -1,4 +1,4 @@
-.PHONY: lint test test-cov docs clean build upload upload-test profile profile-view
+.PHONY: lint test test-cov docs clean build upload upload-test profile profile-parallel profile-view profile-view-parallel
 
 lint:
 	uv run ruff check .
@@ -30,12 +30,20 @@ upload:
 	uv run twine upload dist/*
 
 profile:
-	uv run python -m cProfile -o election_forecast.prof -m election_forecasting.scripts.run_all_models --dates 2
+	uv run python -m cProfile -o election_forecast.prof -m src.scripts.run_all_models --dates 8
 	@echo "\nProfile saved to election_forecast.prof"
 	@echo "View with: make profile-view"
 
+profile-parallel:
+	uv run python -m cProfile -o election_forecast_parallel.prof -m src.scripts.run_all_models --dates 8 --parallel 4
+	@echo "\nProfile saved to election_forecast_parallel.prof"
+	@echo "View with: make profile-view-parallel"
+
 profile-view:
 	uv run snakeviz election_forecast.prof
+
+profile-view-parallel:
+	uv run snakeviz election_forecast_parallel.prof
 
 clean:
 	rm -rf .pytest_cache .ruff_cache htmlcov .coverage coverage.xml
@@ -44,4 +52,4 @@ clean:
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name "*.prof" -delete
 
-quality-check: lint test
+quality-check: lint mypy test

@@ -12,7 +12,7 @@ import importlib
 import inspect
 import argparse
 import traceback
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 from importlib import resources
 from pathlib import Path
 

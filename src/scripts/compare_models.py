@@ -5,7 +5,7 @@ Compare all forecasting models
 Generates comparison tables, rankings, and plots for all models
 """
 
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
