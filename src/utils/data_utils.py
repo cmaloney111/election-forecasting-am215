@@ -2,12 +2,13 @@
 """
 Shared data loading and preprocessing utilities
 """
+from typing import Dict, List
 
 import pandas as pd
 import numpy as np
 
 
-def load_polling_data():
+def load_polling_data() -> pd.DataFrame:
     """
     Load and preprocess 2016 polling data from FiveThirtyEight
 
@@ -84,7 +85,7 @@ def load_polling_data():
     return polls
 
 
-def load_election_results():
+def load_election_results() -> Dict[str, float]:
     """
     Load actual 2016 election results from MIT Election Lab
 
@@ -113,7 +114,7 @@ def load_election_results():
     return actual_margin
 
 
-def load_fundamentals():
+def load_fundamentals() -> Dict[str, Dict[str, float]]:
     """
     Load historical election results for fundamentals prior
 
@@ -126,14 +127,14 @@ def load_fundamentals():
         "data/election_results/mit_president_state_1976_2020.csv", sep="\t"
     )
 
-    fundamentals = {}
+    fundamentals: Dict[str, Dict[str, float]] = {}
 
     for state in results["state_po"].unique():
         state_results = results[results["state_po"] == state]
 
         # Get 2012 and 2008 results
-        margins_2012 = {}
-        margins_2008 = {}
+        margins_2012: Dict[str, float] = {}
+        margins_2008: Dict[str, float] = {}
 
         for year, margins_dict in [(2012, margins_2012), (2008, margins_2008)]:
             year_results = state_results[state_results["year"] == year]
@@ -163,7 +164,7 @@ def load_fundamentals():
     return fundamentals
 
 
-def get_state_list(polls, actual_results):
+def get_state_list(polls: pd.DataFrame, actual_results: Dict[str, float]) -> List[str]:
     """
     Get list of states with sufficient polling data
 
@@ -180,7 +181,7 @@ def get_state_list(polls, actual_results):
     return states
 
 
-def compute_metrics(predictions_df):
+def compute_metrics(predictions_df: pd.DataFrame) -> pd.DataFrame:
     """
     Compute evaluation metrics from predictions
 

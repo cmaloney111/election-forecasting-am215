@@ -7,6 +7,9 @@ lint:
 format:
 	uv run ruff format .
 
+mypy:
+	uv run mypy src/
+
 test:
 	uv run pytest tests/ -v
 
@@ -41,4 +44,4 @@ clean:
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name "*.prof" -delete
 
-quality-check: lint test
+quality-check: lint mypy test

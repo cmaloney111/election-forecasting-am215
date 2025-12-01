@@ -2,6 +2,7 @@
 """
 Base class for election forecasting models
 """
+from typing import Dict, List, Optional, Tuple, Any
 
 import numpy as np
 import pandas as pd
@@ -19,7 +20,7 @@ from src.utils.logging_config import get_logger
 class ElectionForecastModel(ABC):
     """Abstract base class for election forecasting models"""
 
-    def __init__(self, name, seed=None):
+    def __init__(self, name: str, seed: Optional[int] = None) -> None:
         """Initialize the model
 
         Args:
@@ -27,29 +28,43 @@ class ElectionForecastModel(ABC):
             seed: Random seed for reproducibility (default: None for non-deterministic)
         """
         self.name = name
-        self.predictions = []
+        self.predictions: List[Dict[str, Any]] = []
         self.logger = get_logger(f"{__name__}.{name}")
         self.rng = np.random.default_rng(seed)
 
     @abstractmethod
     def fit_and_forecast(
-        self, state_polls, forecast_date, election_date, actual_margin, rng=None
-    ):
+        self,
+        state_polls: pd.DataFrame,
+        forecast_date: pd.Timestamp,
+        election_date: pd.Timestamp,
+        actual_margin: float,
+        rng: Optional[np.random.Generator] = None
+    ) -> Dict[str, float]:
         """
         Fit model on polls up to forecast_date and predict election outcome.
 
-        Args:
-            state_polls: DataFrame with columns [middate, dem_proportion, margin, samplesize, pollster]
-            forecast_date: pd.Timestamp - date to make forecast from
-            election_date: pd.Timestamp - election day
-            actual_margin: float - actual two-party margin (for evaluation)
+        Parameters
+        ----------
+        state_polls : pd.DataFrame
+            DataFrame with columns [middate, dem_proportion, margin, samplesize, pollster]
+        forecast_date : pd.Timestamp
+            Date to make forecast from
+        election_date : pd.Timestamp
+            Election day
+        actual_margin : float
+            Actual two-party margin (for evaluation)
+        rng : np.random.Generator, optional
+            NumPy random generator for reproducibility (default: None)
 
-        Returns:
-            dict with keys: win_probability, predicted_margin, margin_std
+        Returns
+        -------
+        dict
+            Dictionary with keys: win_probability, predicted_margin, margin_std
         """
         pass
 
-    def load_data(self):
+    def load_data(self) -> Tuple[pd.DataFrame, Dict[str, float]]:
         """
         Load polling and election results data
 
@@ -60,7 +75,12 @@ class ElectionForecastModel(ABC):
         actual_margin = load_election_results()
         return polls, actual_margin
 
-    def run_forecast(self, forecast_dates=None, min_polls=10, verbose=False):
+    def run_forecast(
+        self,
+        forecast_dates: Optional[List[pd.Timestamp]] = None,
+        min_polls: int = 10,
+        verbose: bool = False
+    ) -> pd.DataFrame:
         """
         Run forecast across multiple dates and states
 
@@ -133,7 +153,7 @@ class ElectionForecastModel(ABC):
 
         return pd.DataFrame(self.predictions)
 
-    def save_results(self):
+    def save_results(self) -> pd.DataFrame:
         """
         Save predictions and metrics to CSV and text files
 
@@ -162,7 +182,7 @@ class ElectionForecastModel(ABC):
 
         return metrics_df
 
-    def plot_state(self, state):
+    def plot_state(self, state: str) -> None:
         """
         Create time-series plot for a specific state showing model predictions over time
 
