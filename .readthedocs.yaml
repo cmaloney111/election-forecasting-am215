@@ -7,11 +7,15 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.11"
+  apt_packages:
+    - graphviz
 
 sphinx:
   configuration: docs/source/conf.py
+  fail_on_warning: false
 
 python:
   install:
     - method: pip
       path: .
+    - requirements: docs/requirements.txt
