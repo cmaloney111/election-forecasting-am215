@@ -3,8 +3,10 @@
 Kalman Filter Diffusion Model with Improved Regularization
 Brownian motion with drift + pollster biases + fundamentals prior
 """
+
 import numpy as np
 from election_forecasting.models.base_model import ElectionForecastModel
+
 
 class KalmanDiffusionModel(ElectionForecastModel):
     """Improved diffusion model with Kalman filter/RTS smoother"""
@@ -38,9 +40,9 @@ class KalmanDiffusionModel(ElectionForecastModel):
 
         # Forward filter
         for t in range(1, T):
-            dt = dates[t] - dates[t-1]
-            x_pred[t] = x_filt[t-1] + mu * dt
-            P_pred[t] = P_filt[t-1] + sigma2 * dt
+            dt = dates[t] - dates[t - 1]
+            x_pred[t] = x_filt[t - 1] + mu * dt
+            P_pred[t] = P_filt[t - 1] + sigma2 * dt
 
             K = P_pred[t] / (P_pred[t] + obs_variance[t])
             x_filt[t] = x_pred[t] + K * (observations[t] - x_pred[t])
@@ -50,11 +52,11 @@ class KalmanDiffusionModel(ElectionForecastModel):
         x_smooth = np.copy(x_filt)
         P_smooth = np.copy(P_filt)
 
-        for t in range(T-2, -1, -1):
-            dt = dates[t+1] - dates[t]
+        for t in range(T - 2, -1, -1):
+            dt = dates[t + 1] - dates[t]
             J = P_filt[t] / (P_filt[t] + sigma2 * dt)
-            x_smooth[t] = x_filt[t] + J * (x_smooth[t+1] - x_filt[t] - mu * dt)
-            P_smooth[t] = P_filt[t] + J**2 * (P_smooth[t+1] - P_filt[t] - sigma2 * dt)
+            x_smooth[t] = x_filt[t] + J * (x_smooth[t + 1] - x_filt[t] - mu * dt)
+            P_smooth[t] = P_filt[t] + J**2 * (P_smooth[t + 1] - P_filt[t] - sigma2 * dt)
 
         return x_smooth, P_smooth
 
@@ -73,10 +75,12 @@ class KalmanDiffusionModel(ElectionForecastModel):
         # Use recent 1/3 of polls
         recent_polls = state_polls.tail(max(len(state_polls) // 3, 10))
 
-        dates = (recent_polls['middate'] - recent_polls['middate'].min()).dt.days.values.astype(float)
-        margins = recent_polls['margin'].values
-        sample_sizes = recent_polls['samplesize'].values
-        pollsters = recent_polls['pollster'].values
+        dates = (
+            recent_polls["middate"] - recent_polls["middate"].min()
+        ).dt.days.values.astype(float)
+        margins = recent_polls["margin"].values
+        sample_sizes = recent_polls["samplesize"].values
+        pollsters = recent_polls["pollster"].values
 
         # Observation variance
         tau_extra2 = 0.015**2
@@ -109,10 +113,10 @@ class KalmanDiffusionModel(ElectionForecastModel):
             mu_vals = []
             sigma2_vals = []
             for t in range(1, len(dates)):
-                dt = dates[t] - dates[t-1]
+                dt = dates[t] - dates[t - 1]
                 if dt > 0:
-                    mu_vals.append((x_smooth[t] - x_smooth[t-1]) / dt)
-                    sigma2_vals.append(max((P_smooth[t] + P_smooth[t-1]) / dt, 1e-6))
+                    mu_vals.append((x_smooth[t] - x_smooth[t - 1]) / dt)
+                    sigma2_vals.append(max((P_smooth[t] + P_smooth[t - 1]) / dt, 1e-6))
 
             mu = np.mean(mu_vals) if mu_vals else 0.0
             sigma2 = max(np.mean(sigma2_vals), 0.0005) if sigma2_vals else 0.0005
@@ -146,11 +150,13 @@ class KalmanDiffusionModel(ElectionForecastModel):
             drift = mu * dt
             diffusion = np.sqrt(max(sigma2 * dt, 0))
             dW = np.random.normal(0, 1, N)
-            X[:, t+1] = X[:, t] + drift + diffusion * dW
+            X[:, t + 1] = X[:, t] + drift + diffusion * dW
 
         return X[:, -1]
 
-    def fit_and_forecast(self, state_polls, forecast_date, election_date, actual_margin):
+    def fit_and_forecast(
+        self, state_polls, forecast_date, election_date, actual_margin
+    ):
         """Fit Kalman diffusion and forecast election outcome"""
         mu, sigma2, pollster_bias, x_smooth, P_smooth, dates = self.fit_state_diffusion(
             state_polls, prior_mean=0.0
@@ -165,19 +171,22 @@ class KalmanDiffusionModel(ElectionForecastModel):
         forecast_uncertainty = 0.001 * days_to_election
         P_current = P_current + forecast_uncertainty**2
 
-        final_margins = self.simulate_forward(x_current, P_current, mu, sigma2, days_to_election, N=2000)
+        final_margins = self.simulate_forward(
+            x_current, P_current, mu, sigma2, days_to_election, N=2000
+        )
 
         # Win probability
         win_prob = np.mean(final_margins > 0)
         win_prob = np.clip(win_prob, 0.01, 0.99)
 
         return {
-            'win_probability': win_prob,
-            'predicted_margin': np.mean(final_margins),
-            'margin_std': np.std(final_margins)
+            "win_probability": win_prob,
+            "predicted_margin": np.mean(final_margins),
+            "margin_std": np.std(final_margins),
         }
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     model = KalmanDiffusionModel()
     pred_df = model.run_forecast()
     metrics_df = model.save_results()

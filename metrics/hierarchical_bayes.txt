@@ -1,25 +1,97 @@
 hierarchical_bayes - Evaluation Metrics
+Forecast Date: 2016-09-06
+  States: 41
+  Brier Score: 0.1037
+  Log Loss: 0.3558
+  MAE (Margin): 0.0628
+
+Forecast Date: 2016-09-10
+  States: 44
+  Brier Score: 0.0972
+  Log Loss: 0.3321
+  MAE (Margin): 0.0815
+
+Forecast Date: 2016-09-15
+  States: 44
+  Brier Score: 0.0876
+  Log Loss: 0.3095
+  MAE (Margin): 0.0589
+
+Forecast Date: 2016-09-19
+  States: 45
+  Brier Score: 0.0863
+  Log Loss: 0.2985
+  MAE (Margin): 0.0664
+
 Forecast Date: 2016-09-24
   States: 46
-  Brier Score: 0.1008
-  Log Loss: 0.3334
-  MAE (Margin): 0.0779
+  Brier Score: 0.0991
+  Log Loss: 0.3286
+  MAE (Margin): 0.0785
+
+Forecast Date: 2016-09-28
+  States: 47
+  Brier Score: 0.0753
+  Log Loss: 0.2629
+  MAE (Margin): 0.0701
+
+Forecast Date: 2016-10-03
+  States: 49
+  Brier Score: 0.0878
+  Log Loss: 0.2897
+  MAE (Margin): 0.0725
+
+Forecast Date: 2016-10-07
+  States: 50
+  Brier Score: 0.0955
+  Log Loss: 0.3110
+  MAE (Margin): 0.0814
+
+Forecast Date: 2016-10-12
+  States: 51
+  Brier Score: 0.1119
+  Log Loss: 0.3349
+  MAE (Margin): 0.0997
 
 Forecast Date: 2016-10-16
   States: 51
-  Brier Score: 0.0918
-  Log Loss: 0.2891
-  MAE (Margin): 0.0894
+  Brier Score: 0.0899
+  Log Loss: 0.2835
+  MAE (Margin): 0.0885
+
+Forecast Date: 2016-10-21
+  States: 51
+  Brier Score: 0.0768
+  Log Loss: 0.2409
+  MAE (Margin): 0.0769
+
+Forecast Date: 2016-10-25
+  States: 51
+  Brier Score: 0.0913
+  Log Loss: 0.2758
+  MAE (Margin): 0.0747
+
+Forecast Date: 2016-10-30
+  States: 51
+  Brier Score: 0.0825
+  Log Loss: 0.2635
+  MAE (Margin): 0.0731
+
+Forecast Date: 2016-11-03
+  States: 51
+  Brier Score: 0.0738
+  Log Loss: 0.2179
+  MAE (Margin): 0.0613
 
 Forecast Date: 2016-11-07
   States: 51
-  Brier Score: 0.0610
-  Log Loss: 0.1897
-  MAE (Margin): 0.0605
+  Brier Score: 0.0614
+  Log Loss: 0.1908
+  MAE (Margin): 0.0614
 
 Forecast Date: 2016-09-01
   States: 36
-  Brier Score: 0.1179
-  Log Loss: 0.3866
-  MAE (Margin): 0.0776
+  Brier Score: 0.1170
+  Log Loss: 0.3850
+  MAE (Margin): 0.0768
 

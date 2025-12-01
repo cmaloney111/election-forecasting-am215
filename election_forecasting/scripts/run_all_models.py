@@ -8,6 +8,7 @@ from importlib import resources
 
 from election_forecasting.models.base_model import ElectionForecastModel
 
+
 def discover_models():
     """
     Auto-discover all model classes using importlib.resources
@@ -24,21 +25,25 @@ def discover_models():
         for item in resources.files(models_package).iterdir():
             if not item.is_file():
                 continue
-            if not item.name.endswith('.py'):
+            if not item.name.endswith(".py"):
                 continue
-            if item.name.startswith('_') or item.name == 'base_model.py':
+            if item.name.startswith("_") or item.name == "base_model.py":
                 continue
 
             # Import the module
-            module_name = f'election_forecasting.models.{item.name[:-3]}' # gets rid of .py
+            module_name = (
+                f"election_forecasting.models.{item.name[:-3]}"  # gets rid of .py
+            )
             try:
                 module = importlib.import_module(module_name)
 
                 # Find all classes that inherit from ElectionForecastModel
                 for name, obj in inspect.getmembers(module, inspect.isclass):
-                    if (issubclass(obj, ElectionForecastModel) and
-                        obj != ElectionForecastModel and
-                        obj.__module__ == module_name):
+                    if (
+                        issubclass(obj, ElectionForecastModel)
+                        and obj != ElectionForecastModel
+                        and obj.__module__ == module_name
+                    ):
                         models.append((name, obj))
             except Exception as e:
                 print(f"Warning: Could not import {module_name}: {e}")
@@ -46,9 +51,12 @@ def discover_models():
     except Exception as e:
         print(f"Error discovering models: {e}")
 
-    return sorted(models, key=lambda x: x[0]) # sort by name
+    return sorted(models, key=lambda x: x[0])  # sort by name
 
-def generate_forecast_dates(n_dates, election_date='2016-11-08', start_date='2016-09-01'):
+
+def generate_forecast_dates(
+    n_dates, election_date="2016-11-08", start_date="2016-09-01"
+):
     """
     Generate n evenly-spaced forecast dates between start_date and election_date
 
@@ -70,15 +78,18 @@ def generate_forecast_dates(n_dates, election_date='2016-11-08', start_date='201
     # Generate n evenly-spaced dates (work backwards from election)
     dates = []
     for i in range(n_dates):
-        days_from_end = int(total_days * (n_dates - 1 - i) / (n_dates - 1)) if n_dates > 1 else 0
+        days_from_end = (
+            int(total_days * (n_dates - 1 - i) / (n_dates - 1)) if n_dates > 1 else 0
+        )
         forecast_date = last_date - timedelta(days=days_from_end)
         dates.append(forecast_date)
 
     return dates
 
+
 def main():
     parser = argparse.ArgumentParser(
-        description='Run all election forecasting models',
+        description="Run all election forecasting models",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -86,18 +97,17 @@ Examples:
   election-forecast --dates 8    # Use 8 forecast dates
   election-forecast -n 16        # Use 16 forecast dates
   election-forecast -v           # Verbose output
-        """
+        """,
     )
     parser.add_argument(
-        '--dates', '-n',
+        "--dates",
+        "-n",
         type=int,
         default=4,
-        help='Number of forecast dates to use (default: 4)'
+        help="Number of forecast dates to use (default: 4)",
     )
     parser.add_argument(
-        '--verbose', '-v',
-        action="store_true",
-        help='Enable verbose output'
+        "--verbose", "-v", action="store_true", help="Enable verbose output"
     )
 
     args = parser.parse_args()
@@ -107,7 +117,7 @@ Examples:
     print(f"Using {len(forecast_dates)} forecast dates")
     if args.verbose:
         for date in forecast_dates:
-            days_to_election = (pd.to_datetime('2016-11-08') - date).days
+            days_to_election = (pd.to_datetime("2016-11-08") - date).days
             print(f"  - {date.date()} ({days_to_election} days before election)")
     print()
 
@@ -129,7 +139,9 @@ Examples:
 
         try:
             model = ModelClass()
-            pred_df = model.run_forecast(forecast_dates=forecast_dates, verbose=args.verbose)
+            pred_df = model.run_forecast(
+                forecast_dates=forecast_dates, verbose=args.verbose
+            )
             metrics_df = model.save_results()
 
             if args.verbose:
@@ -139,7 +151,9 @@ Examples:
         except Exception as e:
             print(f"ERROR running {model_name}: {e}")
             import traceback
+
             traceback.print_exc()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

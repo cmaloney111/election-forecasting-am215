@@ -5,7 +5,6 @@ import time
 
 from rich.console import Console
 from rich.table import Table
-from rich.rule import Rule
 from rich.panel import Panel
 
 from election_forecasting.scripts.run_all_models import main as forecast_main
@@ -94,7 +93,9 @@ def main():
     console.print()
     console.print(table)
     console.print()
-    console.print(Panel.fit("[bold green]All steps completed successfully![/bold green]"))
+    console.print(
+        Panel.fit("[bold green]All steps completed successfully![/bold green]")
+    )
 
 
 if __name__ == "__main__":
