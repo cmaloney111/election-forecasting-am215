@@ -9,6 +9,7 @@ Key improvements over basic Kalman:
 - More conservative probability clipping
 """
 
+import warnings
 import numpy as np
 from election_forecasting.models.base_model import ElectionForecastModel
 
@@ -136,12 +137,13 @@ class ImprovedKalmanModel(ElectionForecastModel):
 
 
 if __name__ == "__main__":
-    import warnings
+    from election_forecasting.utils.logging_config import setup_logging
 
     warnings.filterwarnings("ignore")
+    setup_logging(__name__)
 
     model = ImprovedKalmanModel()
     pred_df = model.run_forecast()
     metrics_df = model.save_results()
-    print(f"\nTotal predictions: {len(pred_df)}")
-    print(metrics_df.to_string(index=False))
+    model.logger.info(f"Total predictions: {len(pred_df)}")
+    model.logger.info(f"\n{metrics_df.to_string(index=False)}")

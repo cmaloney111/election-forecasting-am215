@@ -187,8 +187,12 @@ class KalmanDiffusionModel(ElectionForecastModel):
 
 
 if __name__ == "__main__":
+    from election_forecasting.utils.logging_config import setup_logging
+
+    setup_logging(__name__)
+
     model = KalmanDiffusionModel()
     pred_df = model.run_forecast()
     metrics_df = model.save_results()
-    print(f"\nTotal predictions: {len(pred_df)}")
-    print(metrics_df.to_string(index=False))
+    model.logger.info(f"Total predictions: {len(pred_df)}")
+    model.logger.info(f"\n{metrics_df.to_string(index=False)}")

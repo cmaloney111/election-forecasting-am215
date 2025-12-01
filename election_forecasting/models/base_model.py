@@ -13,6 +13,7 @@ from election_forecasting.utils.data_utils import (
     load_election_results,
     compute_metrics,
 )
+from election_forecasting.utils.logging_config import get_logger
 
 
 class ElectionForecastModel(ABC):
@@ -21,6 +22,7 @@ class ElectionForecastModel(ABC):
     def __init__(self, name):
         self.name = name
         self.predictions = []
+        self.logger = get_logger(f"{__name__}.{name}")
 
     @abstractmethod
     def fit_and_forecast(
@@ -86,7 +88,7 @@ class ElectionForecastModel(ABC):
                 continue
 
             if verbose:
-                print(f"Processing {state}: {len(state_polls)} polls")
+                self.logger.info(f"Processing {state}: {len(state_polls)} polls")
 
             for forecast_date in forecast_dates:
                 train_polls = state_polls[
@@ -118,7 +120,7 @@ class ElectionForecastModel(ABC):
                         }
                     )
                 except Exception as e:
-                    print(f"  Error in {state} on {forecast_date.date()}: {e}")
+                    self.logger.error(f"Error in {state} on {forecast_date.date()}: {e}")
                     continue
 
         return pd.DataFrame(self.predictions)

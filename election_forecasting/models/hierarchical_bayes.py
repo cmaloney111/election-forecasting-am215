@@ -9,12 +9,13 @@ Combines:
 4. Proper uncertainty quantification
 """
 
+import warnings
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
+from datetime import datetime
 from election_forecasting.models.base_model import ElectionForecastModel
 from election_forecasting.utils.data_utils import load_fundamentals
-from datetime import datetime
 
 
 class HierarchicalBayesModel(ElectionForecastModel):
@@ -237,12 +238,13 @@ class HierarchicalBayesModel(ElectionForecastModel):
 
 
 if __name__ == "__main__":
-    import warnings
+    from election_forecasting.utils.logging_config import setup_logging
 
     warnings.filterwarnings("ignore")
+    setup_logging(__name__)
 
     model = HierarchicalBayesModel()
     pred_df = model.run_forecast()
     metrics_df = model.save_results()
-    print(f"\nTotal predictions: {len(pred_df)}")
-    print(metrics_df.to_string(index=False))
+    model.logger.info(f"Total predictions: {len(pred_df)}")
+    model.logger.info(f"\n{metrics_df.to_string(index=False)}")

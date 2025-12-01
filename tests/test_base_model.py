@@ -73,16 +73,19 @@ class TestElectionForecastModel:
         # Should have no predictions with min_polls=100
         assert len(result) == 0
 
-    def test_run_forecast_verbose(self, sample_polls, sample_actual_results, capsys):
+    def test_run_forecast_verbose(self, sample_polls, sample_actual_results, caplog):
         """Test verbose output"""
+        import logging
+
+        caplog.set_level(logging.INFO)
+
         model = MockModel()
 
         with patch.object(model, "load_data", return_value=(sample_polls, sample_actual_results)):
             forecast_dates = [pd.to_datetime("2016-10-15")]
             model.run_forecast(forecast_dates=forecast_dates, min_polls=5, verbose=True)
 
-        captured = capsys.readouterr()
-        assert "Processing" in captured.out
+        assert "Processing" in caplog.text
 
     def test_save_results(self, sample_polls, sample_actual_results, tmp_path, monkeypatch):
         """Test saving results"""

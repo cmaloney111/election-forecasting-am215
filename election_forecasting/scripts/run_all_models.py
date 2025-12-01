@@ -2,11 +2,16 @@
 import importlib
 import inspect
 import argparse
+import traceback
 import pandas as pd
 from datetime import timedelta
 from importlib import resources
 
+import election_forecasting.models as models_package
 from election_forecasting.models.base_model import ElectionForecastModel
+from election_forecasting.utils.logging_config import setup_logging, get_logger
+
+logger = get_logger(__name__)
 
 
 def discover_models():
@@ -19,8 +24,6 @@ def discover_models():
     models = []
 
     try:
-        import election_forecasting.models as models_package
-
         # Get all module names in the models package
         for item in resources.files(models_package).iterdir():
             if not item.is_file():
@@ -46,10 +49,10 @@ def discover_models():
                     ):
                         models.append((name, obj))
             except Exception as e:
-                print(f"Warning: Could not import {module_name}: {e}")
+                logger.warning(f"Could not import {module_name}: {e}")
 
     except Exception as e:
-        print(f"Error discovering models: {e}")
+        logger.error(f"Error discovering models: {e}")
 
     return sorted(models, key=lambda x: x[0])  # sort by name
 
@@ -112,30 +115,31 @@ Examples:
 
     args = parser.parse_args()
 
+    # Setup logging
+    setup_logging(__name__, level="DEBUG" if args.verbose else "INFO")
+
     forecast_dates = generate_forecast_dates(args.dates)
 
-    print(f"Using {len(forecast_dates)} forecast dates")
+    logger.info(f"Using {len(forecast_dates)} forecast dates")
     if args.verbose:
         for date in forecast_dates:
             days_to_election = (pd.to_datetime("2016-11-08") - date).days
-            print(f"  - {date.date()} ({days_to_election} days before election)")
-    print()
+            logger.info(f"  - {date.date()} ({days_to_election} days before election)")
 
-    print("Looking for models...")
+    logger.info("Looking for models...")
     model_classes = discover_models()
 
     if not model_classes:
-        print("No models found in election_forecasting.models")
+        logger.warning("No models found in election_forecasting.models")
         return
 
-    print(f"Found {len(model_classes)} model(s)")
+    logger.info(f"Found {len(model_classes)} model(s)")
     if args.verbose:
         for name, _ in model_classes:
-            print(f"  - {name}")
-    print()
+            logger.info(f"  - {name}")
 
     for model_name, ModelClass in model_classes:
-        print(f"\nRunning: {model_name}")
+        logger.info(f"\nRunning: {model_name}")
 
         try:
             model = ModelClass()
@@ -145,13 +149,10 @@ Examples:
             metrics_df = model.save_results()
 
             if args.verbose:
-                print(f"\nTotal predictions: {len(pred_df)}\n")
-            print("Metrics:")
-            print(metrics_df.to_string(index=False))
+                logger.info(f"Total predictions: {len(pred_df)}")
+            logger.info(f"Metrics:\n{metrics_df.to_string(index=False)}")
         except Exception as e:
-            print(f"ERROR running {model_name}: {e}")
-            import traceback
-
+            logger.error(f"ERROR running {model_name}: {e}")
             traceback.print_exc()
 
 

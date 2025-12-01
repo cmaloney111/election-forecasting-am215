@@ -10,6 +10,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 import glob
+from election_forecasting.utils.logging_config import setup_logging, get_logger
+
+logger = get_logger(__name__)
 
 
 def parse_metrics(filename):
@@ -44,10 +47,12 @@ def parse_metrics(filename):
 
 def main():
     """Load all model metrics, compare performance, and generate visualizations"""
+    setup_logging(__name__)
+
     metrics_files = glob.glob("metrics/*.txt")
 
     if len(metrics_files) == 0:
-        print("No metrics files found. Run models first.")
+        logger.warning("No metrics files found. Run models first.")
         return
 
     all_metrics = []
@@ -60,24 +65,24 @@ def main():
     all_metrics = pd.concat(all_metrics, ignore_index=True)
 
     # Create comparison tables
-    print("Brier Score (lower is better):")
+    logger.info("Brier Score (lower is better):")
     pivot_brier = all_metrics.pivot(index="date", columns="model", values="brier")
-    print(pivot_brier.to_string())
+    logger.info(f"\n{pivot_brier.to_string()}")
 
-    print("\nLog Loss (lower is better):")
+    logger.info("\nLog Loss (lower is better):")
     pivot_ll = all_metrics.pivot(index="date", columns="model", values="log_loss")
-    print(pivot_ll.to_string())
+    logger.info(f"\n{pivot_ll.to_string()}")
 
-    print("\nMAE Margin (lower is better):")
+    logger.info("\nMAE Margin (lower is better):")
     pivot_mae = all_metrics.pivot(index="date", columns="model", values="mae")
-    print(pivot_mae.to_string())
+    logger.info(f"\n{pivot_mae.to_string()}")
 
-    print("\nAverage performance across all forecast dates:")
+    logger.info("\nAverage performance across all forecast dates:")
     summary = all_metrics.groupby("model")[["brier", "log_loss", "mae"]].mean()
     summary = summary.round(4)
-    print(summary.to_string())
+    logger.info(f"\n{summary.to_string()}")
 
-    print("\nModel rankings (1 = best)")
+    logger.info("\nModel rankings (1 = best)")
     rankings = pd.DataFrame(
         {
             "Brier Score": summary["brier"].rank(),
@@ -87,7 +92,7 @@ def main():
     )
     rankings["Average Rank"] = rankings.mean(axis=1)
     rankings = rankings.sort_values("Average Rank")
-    print(rankings.to_string())
+    logger.info(f"\n{rankings.to_string()}")
 
     comparison_table = all_metrics.pivot_table(
         index="date", columns="model", values=["brier", "log_loss", "mae"]
