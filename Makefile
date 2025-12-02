@@ -33,6 +33,7 @@ profile:
 	uv run python -m cProfile -o election_forecast.prof -m src.scripts.run_all_models --dates 8
 	@echo "\nProfile saved to election_forecast.prof"
 	@echo "View with: make profile-view"
+	@echo "Also, change cutoff to 1/100"
 
 profile-parallel:
 	uv run python -m cProfile -o election_forecast_parallel.prof -m src.scripts.run_all_models --dates 8 --parallel 4

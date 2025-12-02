@@ -31,7 +31,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/cmaloney111/election-forecasting-am215"
 Repository = "https://github.com/cmaloney111/election-forecasting-am215"
-Documentation = "https://election-forecasting.readthedocs.io"
+Documentation = "https://election-forecasting-am215.readthedocs.io"
 Issues = "https://github.com/cmaloney111/election-forecasting-am215/issues"
 
 [project.scripts]
@@ -46,6 +46,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 source = "vcs"
+raw-options = { "local_scheme" = "no-local-version" }
 
 [tool.hatch.build.hooks.vcs]
 version-file = "src/_version.py"
@@ -79,3 +80,6 @@ exclude = [
     "/plots",
     "*.prof",
 ]
+
+[tool.ruff]
+exclude = ["src/_version.py"]

@@ -48,6 +48,7 @@ env/
 
 *.prof
 .coverage
+coverage.xml
 
 # Project outputs (we can uncomment if we don't want to track these, but for this project we should include)
 # predictions/
