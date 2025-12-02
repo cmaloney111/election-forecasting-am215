@@ -8,18 +8,21 @@ Combines:
 3. Adaptive systematic bias correction
 4. Proper uncertainty quantification
 """
+
+import warnings
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 from scipy.stats import norm
-from election_forecasting.models.base_model import ElectionForecastModel
-from election_forecasting.utils.data_utils import load_fundamentals
 from datetime import datetime
+from src.models.base_model import ElectionForecastModel
+from src.utils.data_utils import load_fundamentals
+
 
 class HierarchicalBayesModel(ElectionForecastModel):
     """Hierarchical Bayesian ensemble with bias correction"""
 
-    def __init__(self):
-        super().__init__("hierarchical_bayes")
+    def __init__(self, seed=None):
+        super().__init__("hierarchical_bayes", seed=seed)
         self.fundamentals = load_fundamentals()
         self.house_effects = {}
 
@@ -36,8 +39,8 @@ class HierarchicalBayesModel(ElectionForecastModel):
         """
         house_effects = {}
 
-        for pollster in all_polls['pollster'].unique():
-            p_polls = all_polls[all_polls['pollster'] == pollster]
+        for pollster in all_polls["pollster"].unique():
+            p_polls = all_polls[all_polls["pollster"] == pollster]
             n_p = len(p_polls)
 
             if n_p < 2:
@@ -49,14 +52,14 @@ class HierarchicalBayesModel(ElectionForecastModel):
             for _, poll in p_polls.iterrows():
                 # Get other polls around same time in same state
                 state_time_polls = all_polls[
-                    (all_polls['state_code'] == poll['state_code']) &
-                    (abs((all_polls['middate'] - poll['middate']).dt.days) <= 7) &
-                    (all_polls['pollster'] != pollster)
+                    (all_polls["state_code"] == poll["state_code"])
+                    & (abs((all_polls["middate"] - poll["middate"]).dt.days) <= 7)
+                    & (all_polls["pollster"] != pollster)
                 ]
 
                 if len(state_time_polls) > 0:
-                    state_avg = state_time_polls['margin'].mean()
-                    residuals.append(poll['margin'] - state_avg)
+                    state_avg = state_time_polls["margin"].mean()
+                    residuals.append(poll["margin"] - state_avg)
 
             if len(residuals) > 0:
                 mean_residual = np.mean(residuals)
@@ -91,11 +94,11 @@ class HierarchicalBayesModel(ElectionForecastModel):
 
         # Forward filter
         for t in range(1, T):
-            dt = max(dates[t] - dates[t-1], 1.0)
+            dt = max(dates[t] - dates[t - 1], 1.0)
 
             # Predict
-            x_pred = x_filt[t-1] + mu * dt
-            P_pred = P_filt[t-1] + sigma2 * dt
+            x_pred = x_filt[t - 1] + mu * dt
+            P_pred = P_filt[t - 1] + sigma2 * dt
 
             # Update
             K = P_pred / (P_pred + obs_variance[t])
@@ -106,35 +109,37 @@ class HierarchicalBayesModel(ElectionForecastModel):
         x_smooth = np.copy(x_filt)
         P_smooth = np.copy(P_filt)
 
-        for t in range(T-2, -1, -1):
-            dt = max(dates[t+1] - dates[t], 1.0)
+        for t in range(T - 2, -1, -1):
+            dt = max(dates[t + 1] - dates[t], 1.0)
             P_pred = P_filt[t] + sigma2 * dt
 
             if P_pred > 0:
                 J = P_filt[t] / P_pred
-                x_smooth[t] = x_filt[t] + J * (x_smooth[t+1] - x_filt[t] - mu * dt)
-                P_smooth[t] = P_filt[t] + J**2 * (P_smooth[t+1] - P_pred)
+                x_smooth[t] = x_filt[t] + J * (x_smooth[t + 1] - x_filt[t] - mu * dt)
+                P_smooth[t] = P_filt[t] + J**2 * (P_smooth[t + 1] - P_pred)
 
         return x_smooth[-1], max(P_smooth[-1], 1e-6)
 
-    def fit_and_forecast(self, state_polls, forecast_date, election_date, actual_margin):
+    def fit_and_forecast(
+        self, state_polls, forecast_date, election_date, actual_margin, rng=None
+    ):
         """Hierarchical Bayesian forecast with bias correction"""
 
-        state_code = state_polls['state_code'].iloc[0]
+        state_code = state_polls["state_code"].iloc[0]
 
         # 1. Get Fundamentals Prior
         if state_code in self.fundamentals:
-            prior_mean = self.fundamentals[state_code]['margin']
+            prior_mean = self.fundamentals[state_code]["margin"]
         else:
             prior_mean = 0.0
 
         days_to_election = (election_date - forecast_date).days
-        prior_var = 0.08**2 + (0.0015 * days_to_election)**2
+        prior_var = 0.08**2 + (0.0015 * days_to_election) ** 2
 
         # 2. Process Polls with House Effects
         # Use recent polls (last 45 days)
         cutoff = forecast_date - pd.Timedelta(days=45)
-        recent_polls = state_polls[state_polls['middate'] >= cutoff].copy()
+        recent_polls = state_polls[state_polls["middate"] >= cutoff].copy()
 
         if len(recent_polls) < 3:
             recent_polls = state_polls.tail(10)
@@ -142,51 +147,61 @@ class HierarchicalBayesModel(ElectionForecastModel):
         # Estimate house effects from broader dataset if not already done
         if not self.house_effects:
             # Load all polls to estimate house effects
-            from election_forecasting.utils.data_utils import load_polling_data
+            from src.utils.data_utils import load_polling_data
+
             all_polls = load_polling_data()
-            all_polls = all_polls[all_polls['middate'] <= forecast_date]
+            all_polls = all_polls[all_polls["middate"] <= forecast_date]
             self.house_effects = self.estimate_house_effects(all_polls)
 
         # Apply house effect correction
         corrected_margins = []
         for _, poll in recent_polls.iterrows():
-            pollster = poll['pollster']
+            pollster = poll["pollster"]
             house_effect = self.house_effects.get(pollster, 0.0)
-            corrected_margins.append(poll['margin'] - house_effect)
+            corrected_margins.append(poll["margin"] - house_effect)
 
-        recent_polls['corrected_margin'] = corrected_margins
+        recent_polls["corrected_margin"] = corrected_margins
 
         # 3. Kalman Filter Estimation
-        polls_sorted = recent_polls.sort_values('middate')
+        polls_sorted = recent_polls.sort_values("middate")
 
-        dates = (polls_sorted['middate'] - polls_sorted['middate'].min()).dt.days.values.astype(float)
-        observations = polls_sorted['corrected_margin'].values
-        obs_variance = 1.0 / polls_sorted['samplesize'].values + 0.015**2
+        dates = (
+            polls_sorted["middate"] - polls_sorted["middate"].min()
+        ).dt.days.values.astype(float)
+        observations = polls_sorted["corrected_margin"].values
+        obs_variance = 1.0 / polls_sorted["samplesize"].values + 0.015**2
 
         # Simple parameter estimation
-        mu = np.mean(np.diff(observations)) / max(np.mean(np.diff(dates)), 1.0) if len(observations) > 1 else 0.0
+        mu = (
+            np.mean(np.diff(observations)) / max(np.mean(np.diff(dates)), 1.0)
+            if len(observations) > 1
+            else 0.0
+        )
         sigma2 = 0.003**2  # Daily diffusion
 
-        poll_mean, poll_var = self.kalman_filter_rts(dates, observations, obs_variance, mu, sigma2)
+        poll_mean, poll_var = self.kalman_filter_rts(
+            dates, observations, obs_variance, mu, sigma2
+        )
 
         # 4. Bayesian Combination
         # Time-adaptive prior weight (decreases as election approaches)
         days_elapsed = (forecast_date - datetime(2016, 9, 1)).days
-        w_prior = 0.3 / (1 + (days_elapsed / 21)**2)
+        w_prior = 0.3 / (1 + (days_elapsed / 21) ** 2)
 
         # Precision-weighted combination
         precision_prior = (1 / prior_var) * w_prior
         precision_polls = 1 / poll_var
 
-        combined_mean = (prior_mean * precision_prior + poll_mean * precision_polls) / \
-                        (precision_prior + precision_polls)
+        combined_mean = (prior_mean * precision_prior + poll_mean * precision_polls) / (
+            precision_prior + precision_polls
+        )
         combined_var = 1 / (precision_prior + precision_polls)
 
         # 5. Systematic Bias Correction
         # Estimate systematic bias pattern from deviation between polls and fundamentals
         # In 2016, polls overestimated Democrats more in Republican states
         if state_code in self.fundamentals:
-            pvi = self.fundamentals[state_code]['margin']  # Partisan lean
+            pvi = self.fundamentals[state_code]["margin"]  # Partisan lean
 
             # Adaptive bias learning (ramps up over time)
             learning_weight = min(1.0, days_elapsed / 30)
@@ -202,7 +217,7 @@ class HierarchicalBayesModel(ElectionForecastModel):
 
         # 6. Forecast Uncertainty
         # Future evolution
-        evolution_var = (0.003 * days_to_election)**2
+        evolution_var = (0.003 * days_to_election) ** 2
 
         # Systematic bias uncertainty
         bias_var = 0.04**2
@@ -216,17 +231,20 @@ class HierarchicalBayesModel(ElectionForecastModel):
         win_prob = np.clip(win_prob, 0.02, 0.98)
 
         return {
-            'win_probability': win_prob,
-            'predicted_margin': corrected_mean,
-            'margin_std': total_std
+            "win_probability": win_prob,
+            "predicted_margin": corrected_mean,
+            "margin_std": total_std,
         }
 
-if __name__ == '__main__':
-    import warnings
-    warnings.filterwarnings('ignore')
+
+if __name__ == "__main__":
+    from src.utils.logging_config import setup_logging
+
+    warnings.filterwarnings("ignore")
+    setup_logging(__name__)
 
     model = HierarchicalBayesModel()
     pred_df = model.run_forecast()
     metrics_df = model.save_results()
-    print(f"\nTotal predictions: {len(pred_df)}")
-    print(metrics_df.to_string(index=False))
+    model.logger.info(f"Total predictions: {len(pred_df)}")
+    model.logger.info(f"\n{metrics_df.to_string(index=False)}")

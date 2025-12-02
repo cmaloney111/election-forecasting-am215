@@ -1,25 +1,49 @@
 hierarchical_bayes - Evaluation Metrics
-Forecast Date: 2016-09-24
-  States: 46
-  Brier Score: 0.1008
-  Log Loss: 0.3334
-  MAE (Margin): 0.0779
+Forecast Date: 2016-09-11
+  States: 44
+  Brier Score: 0.0970
+  Log Loss: 0.3285
+  MAE (Margin): 0.0771
 
-Forecast Date: 2016-10-16
+Forecast Date: 2016-09-21
+  States: 45
+  Brier Score: 0.0884
+  Log Loss: 0.3023
+  MAE (Margin): 0.0709
+
+Forecast Date: 2016-09-30
+  States: 49
+  Brier Score: 0.0876
+  Log Loss: 0.2919
+  MAE (Margin): 0.0848
+
+Forecast Date: 2016-10-10
+  States: 50
+  Brier Score: 0.0895
+  Log Loss: 0.2721
+  MAE (Margin): 0.0662
+
+Forecast Date: 2016-10-19
   States: 51
-  Brier Score: 0.0918
-  Log Loss: 0.2891
-  MAE (Margin): 0.0894
+  Brier Score: 0.0919
+  Log Loss: 0.2872
+  MAE (Margin): 0.0794
+
+Forecast Date: 2016-10-29
+  States: 51
+  Brier Score: 0.0874
+  Log Loss: 0.2667
+  MAE (Margin): 0.0735
 
 Forecast Date: 2016-11-07
   States: 51
-  Brier Score: 0.0610
-  Log Loss: 0.1897
-  MAE (Margin): 0.0605
+  Brier Score: 0.0603
+  Log Loss: 0.1879
+  MAE (Margin): 0.0606
 
 Forecast Date: 2016-09-01
   States: 36
-  Brier Score: 0.1179
-  Log Loss: 0.3866
-  MAE (Margin): 0.0776
+  Brier Score: 0.1171
+  Log Loss: 0.3850
+  MAE (Margin): 0.0771
 

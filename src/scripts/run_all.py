@@ -5,12 +5,11 @@ import time
 
 from rich.console import Console
 from rich.table import Table
-from rich.rule import Rule
 from rich.panel import Panel
 
-from election_forecasting.scripts.run_all_models import main as forecast_main
-from election_forecasting.scripts.compare_models import main as compare_main
-from election_forecasting.scripts.generate_plots import main as plot_main
+from src.scripts.run_all_models import main as forecast_main
+from src.scripts.compare_models import main as compare_main
+from src.scripts.generate_plots import main as plot_main
 
 console = Console()
 
@@ -52,6 +51,27 @@ def main():
     parser = argparse.ArgumentParser(description="Run election forecasting pipeline")
     parser.add_argument("--dates", "-n", type=int, default=4)
     parser.add_argument("--verbose", "-v", action="store_true")
+    parser.add_argument(
+        "--profile",
+        "-p",
+        type=str,
+        metavar="FILE",
+        help="Enable profiling and save to FILE (e.g., pipeline.prof)",
+    )
+    parser.add_argument(
+        "--seed",
+        "-s",
+        type=int,
+        metavar="SEED",
+        help="Random seed for reproducibility (default: None for non-deterministic)",
+    )
+    parser.add_argument(
+        "--parallel",
+        "-w",
+        type=int,
+        metavar="WORKERS",
+        help="Number of parallel workers for state-level parallelization (default: None for sequential)",
+    )
     args = parser.parse_args()
 
     timings = {}
@@ -59,6 +79,12 @@ def main():
     argv = ["election-forecast", "--dates", str(args.dates)]
     if args.verbose:
         argv.append("--verbose")
+    if args.profile:
+        argv.extend(["--profile", args.profile])
+    if args.seed is not None:
+        argv.extend(["--seed", str(args.seed)])
+    if args.parallel is not None:
+        argv.extend(["--parallel", str(args.parallel)])
 
     timings["Forecasts"] = run_step(
         1,
@@ -94,7 +120,9 @@ def main():
     console.print()
     console.print(table)
     console.print()
-    console.print(Panel.fit("[bold green]All steps completed successfully![/bold green]"))
+    console.print(
+        Panel.fit("[bold green]All steps completed successfully![/bold green]")
+    )
 
 
 if __name__ == "__main__":

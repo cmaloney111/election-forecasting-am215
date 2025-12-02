@@ -46,9 +46,13 @@ env/
 *.fdb_latexmk
 *.fls
 
-# Project outputs (optional - we can uncomment if we don't want to track these, but for this project we should include)
+*.prof
+.coverage
+
+# Project outputs (we can uncomment if we don't want to track these, but for this project we should include)
 # predictions/
 # metrics/
 # plots/
 # *.png
 # *.csv
+

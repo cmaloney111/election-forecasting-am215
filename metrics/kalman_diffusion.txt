@@ -1,25 +1,49 @@
 kalman_diffusion - Evaluation Metrics
-Forecast Date: 2016-09-24
-  States: 46
-  Brier Score: 0.2125
-  Log Loss: 0.7505
-  MAE (Margin): 0.2703
+Forecast Date: 2016-09-11
+  States: 44
+  Brier Score: 0.2002
+  Log Loss: 0.6962
+  MAE (Margin): 104737.5089
 
-Forecast Date: 2016-10-16
+Forecast Date: 2016-09-21
+  States: 45
+  Brier Score: 0.1749
+  Log Loss: 0.5705
+  MAE (Margin): 121105.2517
+
+Forecast Date: 2016-09-30
+  States: 49
+  Brier Score: 0.1465
+  Log Loss: 0.4773
+  MAE (Margin): 137930.0689
+
+Forecast Date: 2016-10-10
+  States: 50
+  Brier Score: 0.1252
+  Log Loss: 0.4202
+  MAE (Margin): 0.1886
+
+Forecast Date: 2016-10-19
   States: 51
-  Brier Score: 0.1607
-  Log Loss: 0.5864
-  MAE (Margin): 0.2037
+  Brier Score: 0.1407
+  Log Loss: 0.4523
+  MAE (Margin): 0.1848
+
+Forecast Date: 2016-10-29
+  States: 51
+  Brier Score: 0.1603
+  Log Loss: 0.6077
+  MAE (Margin): 0.1716
 
 Forecast Date: 2016-11-07
   States: 51
-  Brier Score: 0.1452
-  Log Loss: 0.5476
-  MAE (Margin): 0.1028
+  Brier Score: 0.1436
+  Log Loss: 0.5400
+  MAE (Margin): 0.1559
 
 Forecast Date: 2016-09-01
   States: 36
-  Brier Score: 0.2352
-  Log Loss: 0.8447
-  MAE (Margin): 0.7020
+  Brier Score: 0.2377
+  Log Loss: 0.8602
+  MAE (Margin): 0.7089
 
