@@ -46,7 +46,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 source = "vcs"
-local-scheme = "no-local-version"
+raw-options = { "local_scheme" = "no-local-version" }
 
 [tool.hatch.build.hooks.vcs]
 version-file = "src/_version.py"
