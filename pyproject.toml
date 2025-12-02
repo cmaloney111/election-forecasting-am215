@@ -79,3 +79,6 @@ exclude = [
     "/plots",
     "*.prof",
 ]
+
+[tool.ruff]
+exclude = ["src/_version.py"]
