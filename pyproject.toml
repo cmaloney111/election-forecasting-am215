@@ -31,7 +31,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/cmaloney111/election-forecasting-am215"
 Repository = "https://github.com/cmaloney111/election-forecasting-am215"
-Documentation = "https://election-forecasting.readthedocs.io"
+Documentation = "https://election-forecasting-am215.readthedocs.io"
 Issues = "https://github.com/cmaloney111/election-forecasting-am215/issues"
 
 [project.scripts]
