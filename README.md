@@ -2,8 +2,7 @@
 
 [![CI](https://github.com/cmaloney111/election-forecasting-am215/actions/workflows/ci.yml/badge.svg)](https://github.com/cmaloney111/election-forecasting-am215/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/cmaloney111/election-forecasting-am215/branch/main/graph/badge.svg)](https://codecov.io/gh/cmaloney111/election-forecasting-am215)
-[![PyPI](https://img.shields.io/pypi/v/election-forecasting.svg)](https://pypi.org/project/election-forecasting/)
-[![Python](https://img.shields.io/pypi/pyversions/election-forecasting.svg)](https://pypi.org/project/election-forecasting/)
+[![PyPI](https://badge.fury.io/py/agentic-doc.svg)](https://pypi.org/project/election-forecasting/)
 
 State-level presidential election forecasting using polling time-series data from the 2016 U.S. presidential election.
 
