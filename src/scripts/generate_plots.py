@@ -37,7 +37,7 @@ def discover_models():
             if item.name.startswith("_") or item.name == "base_model.py":
                 continue
 
-            module_name = f"election_forecasting.models.{item.name[:-3]}"
+            module_name = f"src.models.{item.name[:-3]}"
             try:
                 module = importlib.import_module(module_name)
 
@@ -104,7 +104,7 @@ Examples:
     model_classes = discover_models()
 
     if not model_classes:
-        logger.info("No models found in election_forecasting.models")
+        logger.info("No models found in src.models")
         return
 
     logger.info(f"Found {len(model_classes)} model(s):")

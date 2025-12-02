@@ -147,6 +147,8 @@ class KalmanDiffusionModel(ElectionForecastModel):
             rng = np.random.default_rng()
 
         X = np.zeros((N, days + 1))
+        # Ensure P_start is non-negative to avoid sqrt of negative number
+        P_start = max(P_start, 1e-10)
         X[:, 0] = rng.normal(x_start, np.sqrt(P_start), N)
 
         dt = 1.0

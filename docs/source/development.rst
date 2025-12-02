@@ -129,7 +129,6 @@ The forecasting models support parallel execution via the ``--parallel`` flag:
 
 * Best speedup with many dates (16+) on multi-core machines
 * Process spawning overhead can dominate for small workloads
-* Recommended: Use 4 workers on typical quad-core machines
 
 Docker Development
 ------------------

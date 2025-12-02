@@ -1,4 +1,3 @@
-# Multi-stage build for election forecasting
 FROM python:3.11-slim AS builder
 
 # Install git (needed for setuptools-scm) and uv

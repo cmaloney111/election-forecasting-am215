@@ -1,7 +1,5 @@
 # Election Forecasting Models
 
-[![codecov](https://codecov.io/gh/cmaloney111/election-forecasting-am215/branch/main/graph/badge.svg)](https://codecov.io/gh/cmaloney111/election-forecasting-am215)
-
 State-level presidential election forecasting using polling time-series data from the 2016 U.S. presidential election.
 
 ## Installation
