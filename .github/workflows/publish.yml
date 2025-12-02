@@ -45,8 +45,6 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          # Uses trusted publishing - no API token needed
-          # Configure at: https://pypi.org/manage/account/publishing/
           verbose: true
 
   publish-testpypi:
@@ -57,7 +55,7 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/p/election-forecasting
     permissions:
-      id-token: write  # Required for trusted publishing
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
