@@ -14,9 +14,12 @@ def test_compute_reliability_curve_perfect_calibration():
 
     # actual_margin > 0 => Dem win
     margins = (
-        [1.0] + [-1.0] * 9 +  # 1/10 wins at p=0.1
-        [1.0] * 5 + [-1.0] * 5 +  # 5/10 wins at p=0.5
-        [1.0] * 9 + [-1.0]       # 9/10 wins at p=0.9
+        [1.0]
+        + [-1.0] * 9  # 1/10 wins at p=0.1
+        + [1.0] * 5
+        + [-1.0] * 5  # 5/10 wins at p=0.5
+        + [1.0] * 9
+        + [-1.0]  # 9/10 wins at p=0.9
     )
 
     df = pd.DataFrame(
@@ -32,7 +35,9 @@ def test_compute_reliability_curve_perfect_calibration():
     assert len(reliability) == 3
 
     # In each bin, mean predicted prob should equal empirical win rate
-    diff = (reliability["mean_predicted"] - reliability["empirical_win_rate"]).abs().max()
+    diff = (
+        (reliability["mean_predicted"] - reliability["empirical_win_rate"]).abs().max()
+    )
     assert diff < 1e-6
 
 

@@ -27,7 +27,7 @@ def load_polling_data() -> pd.DataFrame:
 
     mask = polls["total"] > 0
 
-    polls = polls.loc[mask].copy() # type: ignore[assignment]
+    polls = polls.loc[mask].copy()  # type: ignore[assignment]
 
     polls["margin"] = (polls["dem"] - polls["rep"]) / polls["total"]
     polls["dem_proportion"] = polls["dem"] / polls["total"]

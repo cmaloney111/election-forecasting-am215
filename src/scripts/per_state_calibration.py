@@ -13,9 +13,7 @@ Outputs go to:
 
 from __future__ import annotations
 
-import math
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -38,6 +36,7 @@ OUTPUT_DIR = PROJECT_ROOT / "diagnostics" / "per_state"
 # ---------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------
+
 
 def load_all_predictions(predictions_dir: Path = PREDICTIONS_DIR) -> pd.DataFrame:
     """
@@ -113,6 +112,7 @@ def brier_score(y_true: np.ndarray, p: np.ndarray) -> float:
 # Per-state error metrics
 # ---------------------------------------------------------------------
 
+
 def compute_state_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     Compute per-state, per-model error metrics.
@@ -125,7 +125,14 @@ def compute_state_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = add_binary_outcome(df)
 
-    required_cols = ["model", "state", "win_probability", "predicted_margin", "actual_margin", "dem_win"]
+    required_cols = [
+        "model",
+        "state",
+        "win_probability",
+        "predicted_margin",
+        "actual_margin",
+        "dem_win",
+    ]
     missing = [c for c in required_cols if c not in df.columns]
     if missing:
         raise ValueError(f"Missing columns in predictions DataFrame: {missing}")
@@ -134,7 +141,7 @@ def compute_state_metrics(df: pd.DataFrame) -> pd.DataFrame:
     for (model, state), g in df.groupby(["model", "state"]):
         y = df["dem_win"].to_numpy()
         p = df["win_probability"].to_numpy()
-        
+
         brier = brier_score(y, p)
         logloss = safe_log_loss(y, p)
         mae_margin = float(np.mean(np.abs(g["predicted_margin"] - g["actual_margin"])))
@@ -151,12 +158,15 @@ def compute_state_metrics(df: pd.DataFrame) -> pd.DataFrame:
         )
 
     metrics_df = pd.DataFrame(rows)
-    return metrics_df.sort_values(["model", "brier_score", "mae_margin"]).reset_index(drop=True)
+    return metrics_df.sort_values(["model", "brier_score", "mae_margin"]).reset_index(
+        drop=True
+    )
 
 
 # ---------------------------------------------------------------------
 # Per-state calibration curves
 # ---------------------------------------------------------------------
+
 
 def compute_state_calibration(
     df: pd.DataFrame,
@@ -227,6 +237,7 @@ def compute_state_calibration(
     calib_df = pd.DataFrame(rows, columns=columns)
     return calib_df.sort_values(["model", "state", "bin_lower"]).reset_index(drop=True)
 
+
 def plot_state_calibration(
     calib_df: pd.DataFrame,
     output_dir: Path = OUTPUT_DIR,
@@ -252,7 +263,9 @@ def plot_state_calibration(
         fig, ax = plt.subplots(figsize=(5, 5))
 
         # Perfect calibration line
-        ax.plot([0, 1], [0, 1], linestyle="--", linewidth=1, label="Perfect calibration")
+        ax.plot(
+            [0, 1], [0, 1], linestyle="--", linewidth=1, label="Perfect calibration"
+        )
 
         # Scatter of mean predicted probability vs empirical win rate
         sizes = 20 + 5 * np.sqrt(g["n"].astype(float))
@@ -284,6 +297,7 @@ def plot_state_calibration(
 # Main entry point
 # ---------------------------------------------------------------------
 
+
 def main() -> None:
     print(f"Project root:        {PROJECT_ROOT}")
     print(f"Predictions dir:     {PREDICTIONS_DIR}")
@@ -307,8 +321,10 @@ def main() -> None:
     calib_df = compute_state_calibration(preds, n_bins=10, min_points_per_bin=1)
 
     if calib_df.empty:
-        print("Warning: no per-state calibration data produced "
-              "(very few predictions per state / probability bin).")
+        print(
+            "Warning: no per-state calibration data produced "
+            "(very few predictions per state / probability bin)."
+        )
     else:
         calib_path = OUTPUT_DIR / "per_state_calibration.csv"
         calib_df.to_csv(calib_path, index=False)
@@ -320,7 +336,6 @@ def main() -> None:
         print(f"Calibration plots written under: {OUTPUT_DIR}")
 
     print("\nDone.")
-
 
 
 if __name__ == "__main__":

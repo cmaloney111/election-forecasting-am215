@@ -48,7 +48,7 @@ def _prepare_binary_outcomes(
         raise KeyError(f"Column '{margin_col}' not found in predictions_df")
 
     # Keep only the columns we need
-    df: DataFrame = predictions_df[[prob_col, margin_col]].copy() # type: ignore[assignment]
+    df: DataFrame = predictions_df[[prob_col, margin_col]].copy()  # type: ignore[assignment]
 
     # Drop rows with missing values (DataFrame.dropna with subset)
     df = df.dropna(subset=[prob_col, margin_col])
@@ -101,7 +101,7 @@ def compute_reliability_curve(
     ).reset_index()
 
     # Drop empty bins (count == 0) if any
-    reliability = reliability[reliability["count"] > 0] # type: ignore[assignment]
+    reliability = reliability[reliability["count"] > 0]  # type: ignore[assignment]
 
     # Extract numeric bounds of each interval for convenience
     bins: List[pd.Interval] = list(reliability["bin"])
@@ -113,9 +113,9 @@ def compute_reliability_curve(
     reliability["bin_upper"] = bin_upper
 
     # Order columns
-    ordered: DataFrame = reliability[ # type: ignore[assignment]
+    ordered: DataFrame = reliability[  # type: ignore[assignment]
         ["bin_lower", "bin_upper", "count", "mean_predicted", "empirical_win_rate"]
-    ] # type: ignore[assignment]
+    ]  # type: ignore[assignment]
 
     return ordered
 

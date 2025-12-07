@@ -42,8 +42,8 @@ def add_horizon_column(
     df["forecast_date"] = pd.to_datetime(df["forecast_date"])
     election_date = pd.to_datetime(election_date)
 
-    df["days_until_election"] = (
-        (election_date - df["forecast_date"]).dt.days.astype(int)
+    df["days_until_election"] = (election_date - df["forecast_date"]).dt.days.astype(
+        int
     )
     return df
 
@@ -148,8 +148,8 @@ def compute_horizon_metrics(
         .reset_index(drop=True)
     )
 
-    metrics_df = metrics_df.sort_values(
-        ["model", "days_until_election"]
-    ).reset_index(drop=True)
+    metrics_df = metrics_df.sort_values(["model", "days_until_election"]).reset_index(
+        drop=True
+    )
 
     return metrics_df

@@ -1,5 +1,3 @@
-import pandas as pd
-
 from src.scripts.run_all_models import (
     discover_models,
     generate_forecast_dates,
@@ -42,11 +40,19 @@ def test_first_model_smoke():
     # 3. All numeric prediction values should be finite
     pred_num = preds.select_dtypes(include="number")
     assert not pred_num.isna().any().any(), "NaNs in prediction numeric columns"
-    assert not (pred_num == float("inf")).any().any(), "inf in prediction numeric columns"
-    assert not (pred_num == float("-inf")).any().any(), "-inf in prediction numeric columns"
+    assert not (pred_num == float("inf")).any().any(), (
+        "inf in prediction numeric columns"
+    )
+    assert not (pred_num == float("-inf")).any().any(), (
+        "-inf in prediction numeric columns"
+    )
 
     # 4. All numeric metric values should be finite
     metrics_num = metrics.select_dtypes(include="number")
     assert not metrics_num.isna().any().any(), "NaNs in metric numeric columns"
-    assert not (metrics_num == float("inf")).any().any(), "inf in metric numeric columns"
-    assert not (metrics_num == float("-inf")).any().any(), "-inf in metric numeric columns"
+    assert not (metrics_num == float("inf")).any().any(), (
+        "inf in metric numeric columns"
+    )
+    assert not (metrics_num == float("-inf")).any().any(), (
+        "-inf in metric numeric columns"
+    )
