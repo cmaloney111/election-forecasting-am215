@@ -1,49 +1,25 @@
 improved_kalman - Evaluation Metrics
-Forecast Date: 2016-09-11
-  States: 44
-  Brier Score: 0.1521
-  Log Loss: 0.5557
-  MAE (Margin): 0.0749
+Forecast Date: 2016-09-24
+  States: 46
+  Brier Score: 0.1449
+  Log Loss: 0.5320
+  MAE (Margin): 0.0774
 
-Forecast Date: 2016-09-21
-  States: 45
-  Brier Score: 0.1452
-  Log Loss: 0.5333
-  MAE (Margin): 0.0752
-
-Forecast Date: 2016-09-30
-  States: 49
-  Brier Score: 0.1374
-  Log Loss: 0.5014
-  MAE (Margin): 0.0772
-
-Forecast Date: 2016-10-10
-  States: 50
-  Brier Score: 0.1380
-  Log Loss: 0.5121
-  MAE (Margin): 0.0759
-
-Forecast Date: 2016-10-19
+Forecast Date: 2016-10-16
   States: 51
-  Brier Score: 0.1398
-  Log Loss: 0.5232
-  MAE (Margin): 0.0843
-
-Forecast Date: 2016-10-29
-  States: 51
-  Brier Score: 0.1326
-  Log Loss: 0.5097
-  MAE (Margin): 0.0763
+  Brier Score: 0.1379
+  Log Loss: 0.5174
+  MAE (Margin): 0.0846
 
 Forecast Date: 2016-11-07
   States: 51
-  Brier Score: 0.1271
-  Log Loss: 0.5020
-  MAE (Margin): 0.0760
+  Brier Score: 0.1284
+  Log Loss: 0.5056
+  MAE (Margin): 0.0761
 
 Forecast Date: 2016-09-01
   States: 36
-  Brier Score: 0.1681
-  Log Loss: 0.5917
-  MAE (Margin): 0.0696
+  Brier Score: 0.1686
+  Log Loss: 0.5966
+  MAE (Margin): 0.0697
 
