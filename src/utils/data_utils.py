@@ -20,10 +20,14 @@ def load_polling_data() -> pd.DataFrame:
     polls["startdate"] = pd.to_datetime(polls["startdate"])
     polls["enddate"] = pd.to_datetime(polls["enddate"])
     polls["middate"] = polls["startdate"] + (polls["enddate"] - polls["startdate"]) / 2
+
     polls["dem"] = polls["rawpoll_clinton"]
     polls["rep"] = polls["rawpoll_trump"]
     polls["total"] = polls["dem"] + polls["rep"]
-    polls = polls[polls["total"] > 0].copy()
+
+    mask = polls["total"] > 0
+
+    polls = polls.loc[mask].copy() # type: ignore[assignment]
 
     polls["margin"] = (polls["dem"] - polls["rep"]) / polls["total"]
     polls["dem_proportion"] = polls["dem"] / polls["total"]

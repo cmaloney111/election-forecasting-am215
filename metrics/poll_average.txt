@@ -1,39 +1,15 @@
 poll_average - Evaluation Metrics
-Forecast Date: 2016-09-11
-  States: 44
-  Brier Score: 0.0801
-  Log Loss: 0.2712
-  MAE (Margin): 0.0576
+Forecast Date: 2016-09-24
+  States: 46
+  Brier Score: 0.0811
+  Log Loss: 0.2738
+  MAE (Margin): 0.0674
 
-Forecast Date: 2016-09-21
-  States: 45
-  Brier Score: 0.0755
-  Log Loss: 0.2614
-  MAE (Margin): 0.0594
-
-Forecast Date: 2016-09-30
-  States: 49
-  Brier Score: 0.0887
-  Log Loss: 0.2966
-  MAE (Margin): 0.0788
-
-Forecast Date: 2016-10-10
-  States: 50
-  Brier Score: 0.1031
-  Log Loss: 0.3439
-  MAE (Margin): 0.0844
-
-Forecast Date: 2016-10-19
+Forecast Date: 2016-10-16
   States: 51
-  Brier Score: 0.1154
-  Log Loss: 0.3840
-  MAE (Margin): 0.0864
-
-Forecast Date: 2016-10-29
-  States: 51
-  Brier Score: 0.0860
-  Log Loss: 0.2898
-  MAE (Margin): 0.0637
+  Brier Score: 0.1108
+  Log Loss: 0.3715
+  MAE (Margin): 0.0939
 
 Forecast Date: 2016-11-07
   States: 51

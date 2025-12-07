@@ -125,3 +125,149 @@ All results are saved to:
 ## License
 
 MIT
+
+````md
+## Diagnostics and tests
+
+This repository includes a small diagnostics suite to check both the
+calibration utilities and the end-to-end forecasting pipeline.
+
+### 1. Generate predictions
+
+Most diagnostics expect that model predictions have already been generated:
+
+```bash
+# From the repository root
+source .venv/bin/activate
+election-run-all
+```
+
+This runs all configured models and writes prediction files under
+`predictions/` (and corresponding metrics/summary files).
+
+---
+
+### 2. Global calibration diagnostics
+
+The script `src/scripts/calibration_diagnostics.py` loads the prediction
+files and computes **overall calibration statistics** and **reliability
+curves** for each model, aggregating across all states and dates.
+
+It writes CSV summaries and plots to disk.
+
+```bash
+source .venv/bin/activate
+python src/scripts/calibration_diagnostics.py
+```
+
+Inspect the outputs (e.g. CSVs and PNGs) in the `diagnostics/` directory
+as configured inside the script.
+
+---
+
+### 3. Per-state calibration and error diagnostics
+
+To understand how models behave in individual states, we provide a
+per-state diagnostics script:
+
+```bash
+source .venv/bin/activate
+python src/scripts/per_state_calibration.py
+```
+
+This script:
+
+* Loads all prediction CSVs from `predictions/`.
+* Aggregates predictions **by state and model**.
+* Computes:
+  * Mean predicted Democratic win probability by state.
+  * Mean empirical Democratic win rate by state.
+  * Average predicted margin vs. actual margin by state.
+  * Simple binned calibration summaries within each state (optional).
+
+The outputs are written to:
+
+* `diagnostics/per_state/per_state_metrics.csv`: per-state error and
+  summary metrics for each model (e.g. average margin error by state).
+* `diagnostics/per_state/per_state_calibration.csv`: optional per-state
+  binned calibration statistics, if enough data are available.
+* `diagnostics/per_state/calibration_<model>_<state>.png`: reliability
+  curves for specific (model, state) combinations.
+
+These diagnostics are useful for identifying states where a model tends
+to **under-** or **over-predict** the Democratic margin or win
+probability.
+
+---
+
+### 4. Diagnostics by forecast horizon (days until election)
+
+To study how model performance changes as Election Day approaches, we
+include horizon-based diagnostics:
+
+```bash
+source .venv/bin/activate
+python src/scripts/horizon_diagnostics.py
+```
+
+This script:
+
+* Stacks all prediction CSVs from `predictions/` into a single table.
+* Computes the **forecast horizon** for each prediction:
+  * `days_until_election = (Election Day – forecast_date)`.
+* Groups by `(model, days_until_election)` and computes:
+  * Brier score for win probabilities.
+  * Log loss for win probabilities.
+  * Mean absolute error (MAE) of predicted margins.
+  * Mean predicted win probability vs. empirical win rate.
+  * Mean predicted margin vs. mean actual margin.
+
+Outputs are written to:
+
+* `diagnostics/horizon/horizon_metrics.csv`: one row per
+  `(model, days_until_election)` with the metrics above.
+* `diagnostics/horizon/horizon_brier_score_<model>.png`:
+  Brier score vs. days until election.
+* `diagnostics/horizon/horizon_mae_margin_<model>.png`:
+  margin MAE vs. days until election.
+* `diagnostics/horizon/horizon_log_loss_<model>.png`:
+  log loss vs. days until election.
+
+These plots and tables summarize whether a model becomes more accurate
+and better calibrated as the election gets closer, and how far in
+advance its predictions are reliable.
+
+---
+
+### 5. Tests
+
+We provide several test files:
+
+* `tests/test_calibration.py` tests the low-level calibration helper
+  functions in `src/utils/calibration.py` against small synthetic
+  examples with known answers.
+* `tests/test_smoke_models.py` is a “smoke test” that discovers the
+  first forecasting model, runs it on a small number of forecast dates,
+  and checks that the predictions and metrics are non-empty and contain
+  only finite numeric values.
+* `tests/test_horizon_diagnostics.py` checks that the horizon
+  diagnostics (`src/diagnostics/horizon.py`) behave as expected on a
+  small synthetic dataset and that the main summary columns are present.
+
+To run these tests:
+
+```bash
+source .venv/bin/activate
+
+# Run only the calibration tests
+pytest tests/test_calibration.py
+
+# Run only the smoke test
+pytest tests/test_smoke_models.py
+
+# Run only the horizon diagnostics tests
+pytest tests/test_horizon_diagnostics.py
+
+# Or run the full test suite
+pytest
+```
