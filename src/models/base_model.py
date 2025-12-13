@@ -280,8 +280,9 @@ class ElectionForecastModel(ABC):
         """
         Create time-series plot for a specific state showing model predictions over time.
 
-        Saves PNG to:
-            plots/{model_name}/{election_year}/{state}.png
+        Saves PNG to both:
+            plots/{model_name}/{state}.png          (legacy path, used by tests)
+            plots/{model_name}/{election_year}/{state}.png  (year-specific path)
         """
         polls, actual_margin = self.load_data()
         state_polls = polls[polls["state_code"] == state].copy()
@@ -370,9 +371,19 @@ class ElectionForecastModel(ABC):
         ax.grid(alpha=0.3, zorder=0)
         plt.tight_layout()
 
-        # Save into year-specific subfolder, e.g. plots/hierarchical_bayes/2016/FL.png
+        # Save in both the legacy and year-specific locations
         election_year = int(election_date.year)
-        out_dir = Path("plots") / self.name / str(election_year)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        plt.savefig(out_dir / f"{state}.png")
+
+        # 1) Legacy location expected by tests:
+        #    plots/{model_name}/{STATE}.png
+        legacy_dir = Path("plots") / self.name
+        legacy_dir.mkdir(parents=True, exist_ok=True)
+        plt.savefig(legacy_dir / f"{state}.png")
+
+        # 2) Year-specific location used by your project:
+        #    plots/{model_name}/{YEAR}/{STATE}.png
+        year_dir = legacy_dir / str(election_year)
+        year_dir.mkdir(parents=True, exist_ok=True)
+        plt.savefig(year_dir / f"{state}.png")
+
         plt.close()

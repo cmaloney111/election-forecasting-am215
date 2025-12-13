@@ -12,6 +12,8 @@ import src.models as models_package
 from src.models.base_model import ElectionForecastModel
 from src.utils.logging_config import setup_logging, get_logger
 from src.utils.data_utils import set_election_config
+from src.utils.data_utils import get_current_election_date
+
 
 logger = get_logger(__name__)
 
@@ -69,28 +71,51 @@ def _default_election_and_start_dates(year: int) -> tuple[str, str]:
 
 
 def generate_forecast_dates(
-    n_dates: int,
-    election_date: str,
-    start_date: str,
+    n_dates,
+    election_date: str | None = None,
+    start_date: str | None = None,
 ):
     """
     Generate n evenly-spaced forecast dates between start_date and election_date.
+
+    Args:
+        n_dates: Number of forecast dates to generate.
+        election_date: Election day as a string (YYYY-MM-DD). If None,
+            use the currently configured election date.
+        start_date: Earliest date to start forecasting from. If None,
+            default to September 1 of the election year.
+
+    Returns:
+        List of pd.Timestamp forecast dates.
     """
+    # Default election_date to the configured election (2016 in tests)
+    if election_date is None:
+        election_date = get_current_election_date()
+
+    # Default start_date to Sept 1 of the election year
+    if start_date is None:
+        year = int(pd.to_datetime(election_date).year)
+        start_date = f"{year}-09-01"
+
     election = pd.to_datetime(election_date)
     start = pd.to_datetime(start_date)
 
+    # Calculate total days available (end 1 day before election)
     last_date = election - timedelta(days=1)
     total_days = (last_date - start).days
 
+    # Generate n evenly-spaced dates (work backwards from election)
     dates = []
     for i in range(n_dates):
-        days_from_end = (
-            int(total_days * (n_dates - 1 - i) / (n_dates - 1)) if n_dates > 1 else 0
-        )
+        if n_dates > 1:
+            days_from_end = int(total_days * (n_dates - 1 - i) / (n_dates - 1))
+        else:
+            days_from_end = 0
         forecast_date = last_date - timedelta(days=days_from_end)
         dates.append(forecast_date)
 
     return dates
+
 
 
 def main():

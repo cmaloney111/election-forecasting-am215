@@ -1,25 +1,13 @@
 hierarchical_bayes - Evaluation Metrics
-Forecast Date: 2020-09-01
-  States: 26
-  Brier Score: 0.1092
-  Log Loss: 0.3693
-  MAE (Margin): 0.0557
-
-Forecast Date: 2020-09-22
-  States: 31
-  Brier Score: 0.0791
-  Log Loss: 0.2797
-  MAE (Margin): 0.0502
-
-Forecast Date: 2020-10-13
+Forecast Date: 2016-11-07
   States: 51
-  Brier Score: 0.0422
-  Log Loss: 0.1580
-  MAE (Margin): 0.0737
+  Brier Score: 0.0425
+  Log Loss: 0.1423
+  MAE (Margin): 0.0443
 
-Forecast Date: 2020-11-02
-  States: 51
-  Brier Score: 0.0293
-  Log Loss: 0.1075
-  MAE (Margin): 0.0532
+Forecast Date: 2016-09-01
+  States: 36
+  Brier Score: 0.1145
+  Log Loss: 0.3792
+  MAE (Margin): 0.0734
 

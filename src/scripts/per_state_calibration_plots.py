@@ -20,7 +20,6 @@ import argparse
 
 import pandas as pd  # type: ignore[import-untyped]
 import matplotlib.pyplot as plt
-import numpy as np
 
 
 def main():
