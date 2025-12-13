@@ -176,9 +176,7 @@ Examples:
 
                 # Convert forecast_date to datetime for correct plotting
                 if "forecast_date" in pred_df.columns:
-                    pred_df["forecast_date"] = pd.to_datetime(
-                        pred_df["forecast_date"]
-                    )
+                    pred_df["forecast_date"] = pd.to_datetime(pred_df["forecast_date"])
 
                 # Attach predictions in the same structure run_forecast() uses
                 model.predictions = pred_df.to_dict("records")

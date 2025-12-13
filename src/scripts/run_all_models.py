@@ -13,6 +13,7 @@ from src.models.base_model import ElectionForecastModel
 from src.utils.logging_config import setup_logging, get_logger
 from src.utils.data_utils import set_election_config
 from src.utils.data_utils import get_current_election_date
+from typing import List, Optional
 
 
 logger = get_logger(__name__)
@@ -71,10 +72,10 @@ def _default_election_and_start_dates(year: int) -> tuple[str, str]:
 
 
 def generate_forecast_dates(
-    n_dates,
-    election_date: str | None = None,
-    start_date: str | None = None,
-):
+    n_dates: int,
+    election_date: Optional[str] = None,
+    start_date: Optional[str] = None,
+) -> List[pd.Timestamp]:
     """
     Generate n evenly-spaced forecast dates between start_date and election_date.
 
@@ -105,7 +106,7 @@ def generate_forecast_dates(
     total_days = (last_date - start).days
 
     # Generate n evenly-spaced dates (work backwards from election)
-    dates = []
+    dates: List[pd.Timestamp] = []
     for i in range(n_dates):
         if n_dates > 1:
             days_from_end = int(total_days * (n_dates - 1 - i) / (n_dates - 1))
@@ -115,7 +116,6 @@ def generate_forecast_dates(
         dates.append(forecast_date)
 
     return dates
-
 
 
 def main():

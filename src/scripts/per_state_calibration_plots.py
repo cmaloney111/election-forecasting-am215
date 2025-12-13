@@ -110,8 +110,7 @@ def main():
 
             # Get per-state metrics for title / legend
             m_row = metrics_df[
-                (metrics_df["state"] == state)
-                & (metrics_df["model"] == model_name)
+                (metrics_df["state"] == state) & (metrics_df["model"] == model_name)
             ]
             if not m_row.empty:
                 brier = float(m_row["brier_score"].iloc[0])
