@@ -120,9 +120,7 @@ class ElectionForecastModel(ABC):
                     }
                 )
             except Exception as e:
-                self.logger.error(
-                    f"Error in {state} on {forecast_date.date()}: {e}"
-                )
+                self.logger.error(f"Error in {state} on {forecast_date.date()}: {e}")
 
         return results
 
@@ -164,7 +162,9 @@ class ElectionForecastModel(ABC):
 
         polls, actual_margin = self.load_data()
         states = [
-            s for s in polls["state_code"].unique() if pd.notna(s) and s in actual_margin
+            s
+            for s in polls["state_code"].unique()
+            if pd.notna(s) and s in actual_margin
         ]
 
         self.predictions = []
@@ -299,7 +299,7 @@ class ElectionForecastModel(ABC):
         if state_preds.empty:
             return
 
-        state_preds = state_preds.sort_values("forecast_date")
+        state_preds = state_preds.sort_values(by="forecast_date") #type: ignore[call-overload]
 
         fig, ax = plt.subplots(figsize=(12, 6))
 
