@@ -299,7 +299,7 @@ class ElectionForecastModel(ABC):
         if state_preds.empty:
             return
 
-        state_preds = state_preds.sort_values(by="forecast_date") #type: ignore[call-overload]
+        state_preds = state_preds.sort_values(by="forecast_date")  # type: ignore[call-overload]
 
         fig, ax = plt.subplots(figsize=(12, 6))
 
