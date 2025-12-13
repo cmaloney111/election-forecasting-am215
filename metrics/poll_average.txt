@@ -1,25 +1,49 @@
 poll_average - Evaluation Metrics
-Forecast Date: 2020-09-01
-  States: 26
-  Brier Score: 0.0741
-  Log Loss: 0.2621
-  MAE (Margin): 0.0474
+Forecast Date: 2016-09-11
+  States: 44
+  Brier Score: 0.0801
+  Log Loss: 0.2712
+  MAE (Margin): 0.0576
 
-Forecast Date: 2020-09-22
-  States: 31
-  Brier Score: 0.0579
-  Log Loss: 0.2058
-  MAE (Margin): 0.0542
+Forecast Date: 2016-09-21
+  States: 45
+  Brier Score: 0.0755
+  Log Loss: 0.2614
+  MAE (Margin): 0.0594
 
-Forecast Date: 2020-10-13
+Forecast Date: 2016-09-30
+  States: 49
+  Brier Score: 0.0887
+  Log Loss: 0.2966
+  MAE (Margin): 0.0788
+
+Forecast Date: 2016-10-10
+  States: 50
+  Brier Score: 0.1031
+  Log Loss: 0.3439
+  MAE (Margin): 0.0844
+
+Forecast Date: 2016-10-19
   States: 51
-  Brier Score: 0.0363
-  Log Loss: 0.1535
-  MAE (Margin): 0.0739
+  Brier Score: 0.1154
+  Log Loss: 0.3840
+  MAE (Margin): 0.0864
 
-Forecast Date: 2020-11-02
+Forecast Date: 2016-10-29
   States: 51
-  Brier Score: 0.0354
-  Log Loss: 0.1417
-  MAE (Margin): 0.0548
+  Brier Score: 0.0860
+  Log Loss: 0.2898
+  MAE (Margin): 0.0637
+
+Forecast Date: 2016-11-07
+  States: 51
+  Brier Score: 0.0789
+  Log Loss: 0.2634
+  MAE (Margin): 0.0552
+
+Forecast Date: 2016-09-01
+  States: 36
+  Brier Score: 0.0964
+  Log Loss: 0.3176
+  MAE (Margin): 0.0564
 
