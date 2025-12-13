@@ -1,25 +1,25 @@
 improved_kalman - Evaluation Metrics
-Forecast Date: 2016-09-24
-  States: 46
-  Brier Score: 0.1449
-  Log Loss: 0.5320
-  MAE (Margin): 0.0774
+Forecast Date: 2020-09-01
+  States: 26
+  Brier Score: 0.0706
+  Log Loss: 0.2158
+  MAE (Margin): 0.0435
 
-Forecast Date: 2016-10-16
+Forecast Date: 2020-09-22
+  States: 31
+  Brier Score: 0.0518
+  Log Loss: 0.1543
+  MAE (Margin): 0.0492
+
+Forecast Date: 2020-10-13
   States: 51
-  Brier Score: 0.1379
-  Log Loss: 0.5174
-  MAE (Margin): 0.0846
+  Brier Score: 0.0405
+  Log Loss: 0.1887
+  MAE (Margin): 0.0722
 
-Forecast Date: 2016-11-07
+Forecast Date: 2020-11-02
   States: 51
-  Brier Score: 0.1284
-  Log Loss: 0.5056
-  MAE (Margin): 0.0761
-
-Forecast Date: 2016-09-01
-  States: 36
-  Brier Score: 0.1686
-  Log Loss: 0.5966
-  MAE (Margin): 0.0697
+  Brier Score: 0.0403
+  Log Loss: 0.1975
+  MAE (Margin): 0.0615
 

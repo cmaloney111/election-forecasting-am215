@@ -185,7 +185,8 @@ class HierarchicalBayesModel(ElectionForecastModel):
 
         # 4. Bayesian Combination
         # Time-adaptive prior weight (decreases as election approaches)
-        days_elapsed = (forecast_date - datetime(2016, 9, 1)).days
+        campaign_start = datetime(forecast_date.year, 9, 1)
+        days_elapsed = (forecast_date - campaign_start).days
         w_prior = 0.3 / (1 + (days_elapsed / 21) ** 2)
 
         # Precision-weighted combination

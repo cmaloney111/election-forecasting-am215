@@ -11,21 +11,21 @@ from importlib import resources
 import src.models as models_package
 from src.models.base_model import ElectionForecastModel
 from src.utils.logging_config import setup_logging, get_logger
+from src.utils.data_utils import set_election_config
 
 logger = get_logger(__name__)
 
 
 def discover_models():
     """
-    Auto-discover all model classes using importlib.resources
+    Auto-discover all model classes using importlib.resources.
 
     Returns:
-        List of tuples (model_class_name, model_class) sorted by name
+        List of tuples (model_class_name, model_class) sorted by name.
     """
     models = []
 
     try:
-        # Get all module names in the models package
         for item in resources.files(models_package).iterdir():
             if not item.is_file():
                 continue
@@ -34,16 +34,14 @@ def discover_models():
             if item.name.startswith("_") or item.name == "base_model.py":
                 continue
 
-            # Import the module
-            module_name = f"src.models.{item.name[:-3]}"  # gets rid of .py
+            module_name = f"src.models.{item.name[:-3]}"  # strip .py
             try:
                 module = importlib.import_module(module_name)
 
-                # Find all classes that inherit from ElectionForecastModel
                 for name, obj in inspect.getmembers(module, inspect.isclass):
                     if (
                         issubclass(obj, ElectionForecastModel)
-                        and obj != ElectionForecastModel
+                        and obj is not ElectionForecastModel
                         and obj.__module__ == module_name
                     ):
                         models.append((name, obj))
@@ -53,31 +51,37 @@ def discover_models():
     except Exception as e:
         logger.error(f"Error discovering models: {e}")
 
-    return sorted(models, key=lambda x: x[0])  # sort by name
+    return sorted(models, key=lambda x: x[0])
+
+
+def _default_election_and_start_dates(year: int) -> tuple[str, str]:
+    """
+    Helper to provide sensible default election / start dates per cycle.
+    """
+    election_dates = {
+        2012: "2012-11-06",
+        2016: "2016-11-08",
+        2020: "2020-11-03",
+    }
+    election_date = election_dates.get(year, f"{year}-11-01")
+    start_date = f"{year}-09-01"
+    return election_date, start_date
 
 
 def generate_forecast_dates(
-    n_dates, election_date="2016-11-08", start_date="2016-09-01"
+    n_dates: int,
+    election_date: str,
+    start_date: str,
 ):
     """
-    Generate n evenly-spaced forecast dates between start_date and election_date
-
-    Args:
-        n_dates: Number of forecast dates to generate
-        election_date: Election day
-        start_date: Earliest date to start forecasting from
-
-    Returns:
-        List of pd.Timestamp forecast dates
+    Generate n evenly-spaced forecast dates between start_date and election_date.
     """
     election = pd.to_datetime(election_date)
     start = pd.to_datetime(start_date)
 
-    # Calculate total days available (end 1 day before election)
     last_date = election - timedelta(days=1)
     total_days = (last_date - start).days
 
-    # Generate n evenly-spaced dates (work backwards from election)
     dates = []
     for i in range(n_dates):
         days_from_end = (
@@ -95,12 +99,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  election-forecast              # Default: 4 forecast dates, sequential
-  election-forecast --dates 8    # Use 8 forecast dates
-  election-forecast -n 16        # Use 16 forecast dates
-  election-forecast -v           # Verbose output
-  election-forecast --parallel 4 # Use 4 parallel workers
-  election-forecast -w 8         # Use 8 parallel workers
+  election-forecast                        # Default: 4 forecast dates on 2016
+  election-forecast --dates 8              # Use 8 forecast dates
+  election-forecast --year 2020            # Run on 2020 data (expects 2020_president_polls.csv)
+  election-forecast --year 2012 --polls-file data/polls/2012_president_polls.csv
+  election-forecast -n 16                  # Use 16 forecast dates
+  election-forecast -v                     # Verbose output
+  election-forecast --parallel 4           # Use 4 parallel workers
+  election-forecast -w 8                   # Use 8 parallel workers
         """,
     )
     parser.add_argument(
@@ -109,6 +115,23 @@ Examples:
         type=int,
         default=4,
         help="Number of forecast dates to use (default: 4)",
+    )
+    parser.add_argument(
+        "--year",
+        "-y",
+        type=int,
+        default=2016,
+        help="Election year to run (e.g. 2012, 2016, 2020). Default: 2016.",
+    )
+    parser.add_argument(
+        "--polls-file",
+        type=str,
+        default=None,
+        help=(
+            "Optional path to a FiveThirtyEight-style polls CSV. "
+            "If omitted, the loader uses the built-in 2016 timeseries for year=2016 "
+            "or data/polls/{year}_president_polls.csv for other years."
+        ),
     )
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose output"
@@ -141,14 +164,22 @@ Examples:
         profiler = cProfile.Profile()
         profiler.enable()
 
+    # Configure global election year / polls file for all downstream loaders
+    set_election_config(year=args.year, polls_file=args.polls_file)
+
     setup_logging(__name__, level="DEBUG" if args.verbose else "INFO")
 
-    forecast_dates = generate_forecast_dates(args.dates)
+    election_date, start_date = _default_election_and_start_dates(args.year)
+    forecast_dates = generate_forecast_dates(
+        n_dates=args.dates,
+        election_date=election_date,
+        start_date=start_date,
+    )
 
-    logger.info(f"Using {len(forecast_dates)} forecast dates")
+    logger.info(f"Using {len(forecast_dates)} forecast dates for year {args.year}")
     if args.verbose:
         for date in forecast_dates:
-            days_to_election = (pd.to_datetime("2016-11-08") - date).days
+            days_to_election = (pd.to_datetime(election_date) - date).days
             logger.info(f"  - {date.date()} ({days_to_election} days before election)")
 
     logger.info("Looking for models...")
@@ -186,7 +217,7 @@ Examples:
         profiler.disable()
         profiler.dump_stats(args.profile)
         logger.info(f"\nProfiling data saved to {args.profile}")
-        logger.info(f"View with: snakeviz {args.profile}")
+        logger.info("View with: snakeviz {args.profile}")
 
 
 if __name__ == "__main__":
