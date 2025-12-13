@@ -1,20 +1,76 @@
 #!/usr/bin/env python3
 """
 Shared data loading and preprocessing utilities
+
+Now supports multiple election cycles.
+
+Key ideas:
+- `set_election_config(year, polls_file)` sets a global election year and
+  optional polls CSV path.
+- `load_polling_data()` and `load_election_results()` then use that config.
+- By default we keep the old 2016 behaviour so existing code still works.
 """
 
-from typing import Dict, List
-
+from typing import Dict, List, Optional
 import pandas as pd  # type: ignore[import-untyped]
 import numpy as np
 
+# --- Global config ---------------------------------------------------------
 
-def load_polling_data() -> pd.DataFrame:
+CURRENT_ELECTION_YEAR: int = 2016
+CURRENT_POLLS_FILE: Optional[str] = None  # if None, use sensible default per year
+
+
+def set_election_config(year: int = 2016, polls_file: Optional[str] = None) -> None:
     """
-    Load and preprocess 2016 polling data from FiveThirtyEight
+    Configure which election cycle the rest of the module should use.
+
+    This is intentionally very lightweight and global so we don't have to
+    thread `year` through every model / script.
+
+    Args:
+        year: Election year (e.g. 2012, 2016, 2020).
+        polls_file: Optional path to a FiveThirtyEight-style polls CSV.
+            If None, we:
+              - use the original 2016 timeseries file for year=2016
+              - otherwise fall back to f"data/polls/{year}_president_polls.csv"
+    """
+    global CURRENT_ELECTION_YEAR, CURRENT_POLLS_FILE
+    CURRENT_ELECTION_YEAR = int(year)
+    CURRENT_POLLS_FILE = polls_file
+
+
+def get_election_date(year: int) -> str:
+    """
+    Return the election day (YYYY-MM-DD) for a given year.
+
+    We explicitly handle the years we care about and fall back to a sensible
+    default for any others.
+    """
+    election_dates = {
+        2012: "2012-11-06",
+        2016: "2016-11-08",
+        2020: "2020-11-03",
+    }
+    return election_dates.get(year, f"{year}-11-01")
+
+
+def get_current_election_date() -> str:
+    """Convenience wrapper that uses the currently configured election year."""
+    return get_election_date(CURRENT_ELECTION_YEAR)
+
+
+# --------- 2016-specific loader (unchanged logic) --------------------------
+
+
+def _load_polling_data_2016() -> pd.DataFrame:
+    """
+    Load and preprocess 2016 polling data from FiveThirtyEight timeseries.
 
     Returns:
-        DataFrame with columns: middate, dem, rep, margin, dem_proportion, samplesize, pollster, state_code
+        DataFrame with columns:
+            middate, dem, rep, margin, dem_proportion,
+            samplesize, pollster, state_code
     """
     polls = pd.read_csv("data/polls/fivethirtyeight_2016_polls_timeseries.csv")
     polls["startdate"] = pd.to_datetime(polls["startdate"])
@@ -26,84 +82,214 @@ def load_polling_data() -> pd.DataFrame:
     polls["total"] = polls["dem"] + polls["rep"]
 
     mask = polls["total"] > 0
-
-    polls = polls.loc[mask].copy() # type: ignore[assignment]
+    polls = polls.loc[mask].copy()
 
     polls["margin"] = (polls["dem"] - polls["rep"]) / polls["total"]
     polls["dem_proportion"] = polls["dem"] / polls["total"]
 
-    state_map = {
-        "Alabama": "AL",
-        "Alaska": "AK",
-        "Arizona": "AZ",
-        "Arkansas": "AR",
-        "California": "CA",
-        "Colorado": "CO",
-        "Connecticut": "CT",
-        "Delaware": "DE",
-        "District of Columbia": "DC",
-        "Florida": "FL",
-        "Georgia": "GA",
-        "Hawaii": "HI",
-        "Idaho": "ID",
-        "Illinois": "IL",
-        "Indiana": "IN",
-        "Iowa": "IA",
-        "Kansas": "KS",
-        "Kentucky": "KY",
-        "Louisiana": "LA",
-        "Maine": "ME",
-        "Maryland": "MD",
-        "Massachusetts": "MA",
-        "Michigan": "MI",
-        "Minnesota": "MN",
-        "Mississippi": "MS",
-        "Missouri": "MO",
-        "Montana": "MT",
-        "Nebraska": "NE",
-        "Nevada": "NV",
-        "New Hampshire": "NH",
-        "New Jersey": "NJ",
-        "New Mexico": "NM",
-        "New York": "NY",
-        "North Carolina": "NC",
-        "North Dakota": "ND",
-        "Ohio": "OH",
-        "Oklahoma": "OK",
-        "Oregon": "OR",
-        "Pennsylvania": "PA",
-        "Rhode Island": "RI",
-        "South Carolina": "SC",
-        "South Dakota": "SD",
-        "Tennessee": "TN",
-        "Texas": "TX",
-        "Utah": "UT",
-        "Vermont": "VT",
-        "Virginia": "VA",
-        "Washington": "WA",
-        "West Virginia": "WV",
-        "Wisconsin": "WI",
-        "Wyoming": "WY",
-    }
-    polls["state_code"] = polls["state"].map(state_map)
+    polls["state_code"] = polls["state"].map(_STATE_NAME_TO_ABBREV)
 
     return polls
 
 
-def load_election_results() -> Dict[str, float]:
+# --------- Generic FiveThirtyEight-style loader ----------------------------
+
+_STATE_NAME_TO_ABBREV: Dict[str, str] = {
+    "Alabama": "AL",
+    "Alaska": "AK",
+    "Arizona": "AZ",
+    "Arkansas": "AR",
+    "California": "CA",
+    "Colorado": "CO",
+    "Connecticut": "CT",
+    "Delaware": "DE",
+    "District of Columbia": "DC",
+    "Florida": "FL",
+    "Georgia": "GA",
+    "Hawaii": "HI",
+    "Idaho": "ID",
+    "Illinois": "IL",
+    "Indiana": "IN",
+    "Iowa": "IA",
+    "Kansas": "KS",
+    "Kentucky": "KY",
+    "Louisiana": "LA",
+    "Maine": "ME",
+    "Maryland": "MD",
+    "Massachusetts": "MA",
+    "Michigan": "MI",
+    "Minnesota": "MN",
+    "Mississippi": "MS",
+    "Missouri": "MO",
+    "Montana": "MT",
+    "Nebraska": "NE",
+    "Nevada": "NV",
+    "New Hampshire": "NH",
+    "New Jersey": "NJ",
+    "New Mexico": "NM",
+    "New York": "NY",
+    "North Carolina": "NC",
+    "North Dakota": "ND",
+    "Ohio": "OH",
+    "Oklahoma": "OK",
+    "Oregon": "OR",
+    "Pennsylvania": "PA",
+    "Rhode Island": "RI",
+    "South Carolina": "SC",
+    "South Dakota": "SD",
+    "Tennessee": "TN",
+    "Texas": "TX",
+    "Utah": "UT",
+    "Vermont": "VT",
+    "Virginia": "VA",
+    "Washington": "WA",
+    "West Virginia": "WV",
+    "Wisconsin": "WI",
+    "Wyoming": "WY",
+}
+
+
+def _load_polling_data_fte_long(polls_file: str, cycle: int) -> pd.DataFrame:
     """
-    Load actual 2016 election results from MIT Election Lab
+    Load and preprocess raw FiveThirtyEight-style presidential polling data.
+
+    This is designed for files like `2020_president_polls.csv` where each row
+    is a (poll, candidate) combo and support is in a `pct` column.
+
+    Args:
+        polls_file: Path to CSV.
+        cycle: Election cycle year (used to filter the `cycle` column).
 
     Returns:
-        dict mapping state code to actual Democratic margin
+        DataFrame with the same columns as `_load_polling_data_2016`.
+    """
+    polls_raw = pd.read_csv(polls_file)
+    # Basic filtering: correct cycle, presidential general-election polls, with a state
+    polls = polls_raw.copy()
+    if "cycle" in polls.columns:
+        polls = polls[polls["cycle"] == cycle]
+
+    # 2020 file uses "U.S. President" as the office_type; we just require it to be presidential.
+    if "office_type" in polls.columns:
+        polls = polls[polls["office_type"].str.contains("President", na=False)]
+
+    if "stage" in polls.columns:
+        # keep general-election polls only when stage is present
+        polls = polls[polls["stage"] == "general"]
+
+    polls = polls[polls["state"].notna()].copy()
+
+    # Keep only DEM / REP rows and pivot to wide format per poll_id + state
+    if "candidate_party" not in polls.columns or "pct" not in polls.columns:
+        raise ValueError(
+            "Expected columns `candidate_party` and `pct` in polls file "
+            f"{polls_file}, but they were not found."
+        )
+
+    polls = polls[polls["candidate_party"].isin(["DEM", "REP"])].copy()
+
+    # Parse dates
+    polls["start_date"] = pd.to_datetime(polls["start_date"])
+    polls["end_date"] = pd.to_datetime(polls["end_date"])
+
+    index_cols = [
+        "poll_id",
+        "state",
+        "pollster",
+        "sample_size",
+        "start_date",
+        "end_date",
+    ]
+
+    table = polls.pivot_table(
+        index=index_cols,
+        columns="candidate_party",
+        values="pct",
+        aggfunc="mean",
+    )
+
+    # Flatten columns and compute derived quantities
+    wide = table.reset_index()
+    wide.rename(
+        columns={
+            "DEM": "dem",
+            "REP": "rep",
+            "sample_size": "samplesize",
+            "start_date": "startdate",
+            "end_date": "enddate",
+        },
+        inplace=True,
+    )
+
+    wide["total"] = wide["dem"] + wide["rep"]
+    wide = wide[wide["total"] > 0].copy()
+
+    wide["margin"] = (wide["dem"] - wide["rep"]) / wide["total"]
+    wide["dem_proportion"] = wide["dem"] / wide["total"]
+    wide["middate"] = wide["startdate"] + (wide["enddate"] - wide["startdate"]) / 2
+
+    wide["state_code"] = wide["state"].map(_STATE_NAME_TO_ABBREV)
+
+    # Reorder / select columns to match 2016 loader
+    cols = [
+        "middate",
+        "dem",
+        "rep",
+        "margin",
+        "dem_proportion",
+        "samplesize",
+        "pollster",
+        "state_code",
+        "startdate",
+        "enddate",
+        "total",
+    ]
+    wide = wide[cols]
+
+    return wide
+
+
+# --------- Public loaders used by the models -------------------------------
+
+
+def load_polling_data() -> pd.DataFrame:
+    """
+    Load polling data for the currently configured election.
+
+    Behaviour:
+      - If CURRENT_ELECTION_YEAR == 2016 and CURRENT_POLLS_FILE is None,
+        this uses the original `_load_polling_data_2016()` to preserve
+        backwards compatibility.
+      - Otherwise, it expects a FiveThirtyEight-style CSV (either provided via
+        CURRENT_POLLS_FILE or inferred as `data/polls/{year}_president_polls.csv`)
+        and parses it with `_load_polling_data_fte_long`.
+    """
+    year = CURRENT_ELECTION_YEAR
+    polls_file = CURRENT_POLLS_FILE
+
+    if year == 2016 and polls_file is None:
+        return _load_polling_data_2016()
+
+    if polls_file is None:
+        polls_file = f"data/polls/{year}_president_polls.csv"
+
+    return _load_polling_data_fte_long(polls_file=polls_file, cycle=year)
+
+
+def _load_election_results_year(year: int) -> Dict[str, float]:
+    """
+    Load actual election results for a given year from MIT Election Lab.
+
+    Returns:
+        dict mapping state code to actual Democratic margin for that year.
     """
     results = pd.read_csv(
         "data/election_results/mit_president_state_1976_2020.csv", sep="\t"
     )
-    results_2016 = results[results["year"] == 2016].copy()
+    results_year = results[results["year"] == year].copy()
 
     state_results = (
-        results_2016.groupby(["state_po", "party_simplified"])
+        results_year.groupby(["state_po", "party_simplified"])
         .agg({"candidatevotes": "sum"})
         .reset_index()
     )
@@ -119,14 +305,37 @@ def load_election_results() -> Dict[str, float]:
     return actual_margin
 
 
+def _load_election_results_2016() -> Dict[str, float]:
+    """Retained for backwards compatibility; now just calls the generic version."""
+    return _load_election_results_year(2016)
+
+
+def load_election_results() -> Dict[str, float]:
+    """
+    Public wrapper used by models.
+
+    Uses the currently configured election year.
+    """
+    return _load_election_results_year(CURRENT_ELECTION_YEAR)
+
+
+# ----------------- Fundamentals & helpers (unchanged) ----------------------
+
+
 def load_fundamentals() -> Dict[str, Dict[str, float]]:
     """
-    Load historical election results for fundamentals prior
+    Load historical election results for fundamentals prior.
 
-    Computes weighted average of 2012 (70%) and 2008 (30%) results
+    Computes weighted average of 2012 (70%) and 2008 (30%) results.
+
+    NOTE: This is still the same 2016-oriented prior as in the original
+    project. If you want a 2012 or 2020-specific fundamentals prior, you
+    can generalise this function further (e.g. use (2008, 2004) for 2012,
+    or (2016, 2012) for 2020).
 
     Returns:
-        dict mapping state code to fundamentals dict with keys: margin, margin_2012, margin_2008
+        dict mapping state code to fundamentals dict with keys:
+            margin, margin_2012, margin_2008
     """
     results = pd.read_csv(
         "data/election_results/mit_president_state_1976_2020.csv", sep="\t"
@@ -163,7 +372,7 @@ def load_fundamentals() -> Dict[str, Dict[str, float]]:
             fundamentals[state] = {
                 "margin": margins_2012[state],
                 "margin_2012": margins_2012[state],
-                "margin_2008": 0.0,  # Default to 0.0 instead of None
+                "margin_2008": 0.0,
             }
 
     return fundamentals
@@ -171,7 +380,7 @@ def load_fundamentals() -> Dict[str, Dict[str, float]]:
 
 def get_state_list(polls: pd.DataFrame, actual_results: Dict[str, float]) -> List[str]:
     """
-    Get list of states with sufficient polling data
+    Get list of states with sufficient polling data.
 
     Args:
         polls: DataFrame of polling data
@@ -188,13 +397,15 @@ def get_state_list(polls: pd.DataFrame, actual_results: Dict[str, float]) -> Lis
 
 def compute_metrics(predictions_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Compute evaluation metrics from predictions
+    Compute evaluation metrics from predictions.
 
     Args:
-        predictions_df: DataFrame with columns: forecast_date, win_probability, predicted_margin, actual_margin
+        predictions_df: DataFrame with columns:
+            forecast_date, win_probability, predicted_margin, actual_margin
 
     Returns:
-        DataFrame with columns: forecast_date, n_states, brier_score, log_loss, mae_margin
+        DataFrame with columns:
+            forecast_date, n_states, brier_score, log_loss, mae_margin
     """
     metrics = []
     forecast_dates = predictions_df["forecast_date"].unique()
@@ -211,7 +422,9 @@ def compute_metrics(predictions_df: pd.DataFrame) -> pd.DataFrame:
         eps = 1e-10
         log_loss = -np.mean(
             subset["actual_win"] * np.log(subset["win_probability"] + eps)
-            + (1 - subset["actual_win"]) * np.log(1 - subset["win_probability"] + eps)
+            + (1 - subset["actual_win"]) * np.log(
+                1 - subset["win_probability"] + eps
+            )
         )
         mae = np.mean(np.abs(subset["predicted_margin"] - subset["actual_margin"]))
 
@@ -219,9 +432,9 @@ def compute_metrics(predictions_df: pd.DataFrame) -> pd.DataFrame:
             {
                 "forecast_date": pd.to_datetime(fdate).date(),
                 "n_states": len(subset),
-                "brier_score": brier,
-                "log_loss": log_loss,
-                "mae_margin": mae,
+                "brier_score": float(brier),
+                "log_loss": float(log_loss),
+                "mae_margin": float(mae),
             }
         )
 
