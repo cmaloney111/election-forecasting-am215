@@ -50,6 +50,17 @@ def run_step(step_number, title, func, argv=None):
 def main():
     parser = argparse.ArgumentParser(description="Run election forecasting pipeline")
     parser.add_argument("--dates", "-n", type=int, default=4)
+    parser.add_argument("--year", "-y", type=int, default=2016)
+    parser.add_argument(
+        "--polls-file",
+        type=str,
+        default=None,
+        help=(
+            "Optional path to a FiveThirtyEight-style polls CSV. "
+            "If omitted, the loader uses the built-in 2016 timeseries for year=2016 "
+            "or data/polls/{year}_president_polls.csv for other years."
+        ),
+    )
     parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument(
         "--profile",
@@ -76,7 +87,9 @@ def main():
 
     timings = {}
 
-    argv = ["election-forecast", "--dates", str(args.dates)]
+    argv = ["election-forecast", "--dates", str(args.dates), "--year", str(args.year)]
+    if args.polls_file is not None:
+        argv.extend(["--polls-file", args.polls_file])
     if args.verbose:
         argv.append("--verbose")
     if args.profile:

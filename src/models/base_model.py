@@ -1,33 +1,42 @@
 #!/usr/bin/env python3
 """
-Base class for election forecasting models
+Base class for election forecasting models.
+
+This version is generalized so that the election year and election date
+are not hard-coded to 2016. The date is taken from
+`src.utils.data_utils.get_current_election_date()`, which in turn is
+controlled by `set_election_config(...)`.
 """
 
 from typing import Dict, List, Optional, Tuple, Any
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
+from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd  # type: ignore[import-untyped]
 import matplotlib.pyplot as plt
-from pathlib import Path
-from abc import ABC, abstractmethod
+
 from src.utils.data_utils import (
     load_polling_data,
     load_election_results,
     compute_metrics,
+    get_current_election_date,
 )
 from src.utils.logging_config import get_logger
 
 
 class ElectionForecastModel(ABC):
-    """Abstract base class for election forecasting models"""
+    """Abstract base class for election forecasting models."""
 
     def __init__(self, name: str, seed: Optional[int] = None) -> None:
-        """Initialize the model
+        """
+        Initialize the model.
 
         Args:
-            name: Model name
-            seed: Random seed for reproducibility (default: None for non-deterministic)
+            name: Model name.
+            seed: Random seed for reproducibility
+                  (default: None for non-deterministic).
         """
         self.name = name
         self.predictions: List[Dict[str, Any]] = []
@@ -44,31 +53,18 @@ class ElectionForecastModel(ABC):
         rng: Optional[np.random.Generator] = None,
     ) -> Dict[str, float]:
         """
-        Fit model on polls up to forecast_date and predict election outcome.
+        Fit model on polls up to `forecast_date` and predict election outcome.
 
-        Parameters
-        ----------
-        state_polls : pd.DataFrame
-            DataFrame with columns [middate, dem_proportion, margin, samplesize, pollster]
-        forecast_date : pd.Timestamp
-            Date to make forecast from
-        election_date : pd.Timestamp
-            Election day
-        actual_margin : float
-            Actual two-party margin (for evaluation)
-        rng : np.random.Generator, optional
-            NumPy random generator for reproducibility (default: None)
-
-        Returns
-        -------
-        dict
-            Dictionary with keys: win_probability, predicted_margin, margin_std
+        Must return a dict with keys:
+            - "win_probability"
+            - "predicted_margin"
+            - optionally "margin_std"
         """
-        pass
+        raise NotImplementedError
 
     def load_data(self) -> Tuple[pd.DataFrame, Dict[str, float]]:
         """
-        Load polling and election results data
+        Load polling and election results data.
 
         Returns:
             tuple of (polls DataFrame, actual_margin dict)
@@ -86,8 +82,11 @@ class ElectionForecastModel(ABC):
         min_polls: int,
         states: List[str],
     ) -> List[Dict[str, Any]]:
-        """Helper method to forecast all states for a single date (for parallelization)"""
-        results = []
+        """
+        Helper to forecast all states for a single date (for parallelization).
+        """
+        results: List[Dict[str, Any]] = []
+
         for state in states:
             state_polls = polls[polls["state_code"] == state].copy()
             if len(state_polls) < min_polls:
@@ -110,7 +109,6 @@ class ElectionForecastModel(ABC):
                     state_margin,
                     rng=self.rng,
                 )
-
                 results.append(
                     {
                         "state": state,
@@ -134,26 +132,35 @@ class ElectionForecastModel(ABC):
         n_workers: Optional[int] = None,
     ) -> pd.DataFrame:
         """
-        Run forecast across multiple dates and states
+        Run forecast across multiple dates and states.
 
         Args:
-            forecast_dates: List of pd.Timestamp dates to forecast from (default: 4 dates in Oct-Nov 2016)
-            min_polls: Minimum number of polls required to forecast a state
-            verbose: If True, print processing status for each state
-            n_workers: Number of parallel workers (default: None for sequential, >1 for parallel)
+            forecast_dates: List of forecast dates. If None, use four
+                default dates in October/November of the election year.
+            min_polls: Minimum number of polls required to forecast a state.
+            verbose: If True, log per-state progress.
+            n_workers: If None or <=1, run sequentially; otherwise use
+                ProcessPoolExecutor with the given number of workers.
 
         Returns:
-            DataFrame with columns: state, forecast_date, win_probability, predicted_margin, margin_std, actual_margin
+            DataFrame of predictions with columns:
+                state, forecast_date, win_probability,
+                predicted_margin, margin_std, actual_margin
         """
+        election_date_str = get_current_election_date()
+        election_date = pd.to_datetime(election_date_str)
+        election_year = int(election_date.year)
+
         if forecast_dates is None:
-            forecast_dates = [
-                pd.to_datetime(d)
-                for d in ["2016-10-01", "2016-10-15", "2016-11-01", "2016-11-07"]
+            default_dates = [
+                f"{election_year}-10-01",
+                f"{election_year}-10-15",
+                f"{election_year}-11-01",
+                f"{election_year}-11-07",
             ]
+            forecast_dates = [pd.to_datetime(d) for d in default_dates]
 
         polls, actual_margin = self.load_data()
-        election_date = pd.to_datetime("2016-11-08")
-
         states = [
             s
             for s in polls["state_code"].unique()
@@ -162,9 +169,8 @@ class ElectionForecastModel(ABC):
 
         self.predictions = []
 
-        # Choose execution mode based on n_workers parameter
         if n_workers is None or n_workers <= 1:
-            # Sequential execution (original code path)
+            # Sequential execution
             for state in states:
                 state_polls = polls[polls["state_code"] == state].copy()
                 if len(state_polls) < min_polls:
@@ -193,7 +199,6 @@ class ElectionForecastModel(ABC):
                             state_margin,
                             rng=self.rng,
                         )
-
                         self.predictions.append(
                             {
                                 "state": state,
@@ -218,7 +223,6 @@ class ElectionForecastModel(ABC):
                         self.logger.info(
                             f"Submitting forecast for {forecast_date.date()}"
                         )
-
                     future = executor.submit(
                         self._forecast_single_date,
                         forecast_date,
@@ -230,7 +234,6 @@ class ElectionForecastModel(ABC):
                     )
                     futures[future] = forecast_date
 
-                # Collect results as they complete
                 for future in as_completed(futures):
                     forecast_date = futures[future]
                     try:
@@ -238,7 +241,8 @@ class ElectionForecastModel(ABC):
                         self.predictions.extend(date_results)
                         if verbose:
                             self.logger.info(
-                                f"Completed {forecast_date.date()} ({len(date_results)} predictions)"
+                                f"Completed {forecast_date.date()} "
+                                f"({len(date_results)} predictions)"
                             )
                     except Exception as e:
                         self.logger.error(
@@ -249,14 +253,11 @@ class ElectionForecastModel(ABC):
 
     def save_results(self) -> pd.DataFrame:
         """
-        Save predictions and metrics to CSV and text files
-
-        Creates predictions/{model_name}.csv and metrics/{model_name}.txt
+        Save predictions and metrics to CSV and text files.
 
         Returns:
-            DataFrame with columns: forecast_date, n_states, brier_score, log_loss, mae_margin
+            DataFrame of metrics as returned by compute_metrics().
         """
-        # Create output directories if they don't exist
         Path("predictions").mkdir(parents=True, exist_ok=True)
         Path("metrics").mkdir(parents=True, exist_ok=True)
 
@@ -264,7 +265,6 @@ class ElectionForecastModel(ABC):
         pred_df.to_csv(f"predictions/{self.name}.csv", index=False)
 
         metrics_df = compute_metrics(pred_df)
-
         with open(f"metrics/{self.name}.txt", "w") as f:
             f.write(f"{self.name} - Evaluation Metrics\n")
             for _, row in metrics_df.iterrows():
@@ -278,39 +278,36 @@ class ElectionForecastModel(ABC):
 
     def plot_state(self, state: str) -> None:
         """
-        Create time-series plot for a specific state showing model predictions over time
+        Create time-series plot for a specific state showing model predictions over time.
 
-        Args:
-            state: Two-letter state code (e.g., 'FL', 'PA')
-
-        Saves:
-            PNG file to plots/{model_name}/{state}.png
+        Saves PNG to both:
+            plots/{model_name}/{state}.png          (legacy path, used by tests)
+            plots/{model_name}/{election_year}/{state}.png  (year-specific path)
         """
         polls, actual_margin = self.load_data()
         state_polls = polls[polls["state_code"] == state].copy()
 
+        # Require at least a few polls to make the plot meaningful
         if len(state_polls) < 10:
             return
 
-        # Get predictions for this state
         pred_df = pd.DataFrame(self.predictions)
-        if len(pred_df) == 0:
+        if pred_df.empty:
             return
 
         state_preds = pred_df[pred_df["state"] == state].copy()
-        if len(state_preds) == 0:
+        if state_preds.empty:
             return
 
-        state_preds = state_preds.sort_values("forecast_date")
+        state_preds = state_preds.sort_values(by="forecast_date")  # type: ignore[call-overload]
 
         fig, ax = plt.subplots(figsize=(12, 6))
 
-        # Plot model predictions over time
         forecast_dates = pd.to_datetime(state_preds["forecast_date"].values)
         predicted_margins = state_preds["predicted_margin"].values
         margin_stds = state_preds["margin_std"].values
 
-        # Add uncertainty bands (90% CI); plot first so it's in background
+        # Uncertainty band (90% CI)
         ax.fill_between(
             forecast_dates,
             predicted_margins - 1.645 * margin_stds,
@@ -321,7 +318,7 @@ class ElectionForecastModel(ABC):
             zorder=1,
         )
 
-        # Plot raw polls
+        # Raw polls
         ax.scatter(
             state_polls["middate"],
             state_polls["margin"],
@@ -333,7 +330,7 @@ class ElectionForecastModel(ABC):
             marker="o",
         )
 
-        # Plot model forecast line on top of everything
+        # Forecast line
         ax.plot(
             forecast_dates,
             predicted_margins,
@@ -346,8 +343,8 @@ class ElectionForecastModel(ABC):
             markeredgewidth=1.5,
         )
 
-        # Add reference lines
-        ax.axhline(0, color="k", linestyle="--", alpha=0.5, linewidth=1, zorder=0)
+        # Reference lines
+        ax.axhline(0.0, color="k", linestyle="--", alpha=0.5, linewidth=1, zorder=0)
         if state in actual_margin:
             ax.axhline(
                 actual_margin[state],
@@ -358,20 +355,35 @@ class ElectionForecastModel(ABC):
                 zorder=4,
             )
 
-        # Set x-axis limits to focus on the forecast period (with some padding)
-        election_date = pd.to_datetime("2016-11-08")
+        # X-axis limits based on election date
+        election_date = pd.to_datetime(get_current_election_date())
         start_date = forecast_dates.min() - pd.Timedelta(days=14)
         ax.set_xlim(start_date, election_date + pd.Timedelta(days=2))
 
         ax.set_xlabel("Date", fontsize=11)
         ax.set_ylabel("Democratic Margin (%)", fontsize=11)
         ax.set_title(
-            f"{state} - {self.name} Forecast Evolution", fontsize=13, fontweight="bold"
+            f"{state} - {self.name} Forecast Evolution",
+            fontsize=13,
+            fontweight="bold",
         )
         ax.legend(loc="best", fontsize=9)
         ax.grid(alpha=0.3, zorder=0)
         plt.tight_layout()
 
-        Path(f"plots/{self.name}").mkdir(parents=True, exist_ok=True)
-        plt.savefig(f"plots/{self.name}/{state}.png")
+        # Save in both the legacy and year-specific locations
+        election_year = int(election_date.year)
+
+        # 1) Legacy location expected by tests:
+        #    plots/{model_name}/{STATE}.png
+        legacy_dir = Path("plots") / self.name
+        legacy_dir.mkdir(parents=True, exist_ok=True)
+        plt.savefig(legacy_dir / f"{state}.png")
+
+        # 2) Year-specific location used by your project:
+        #    plots/{model_name}/{YEAR}/{STATE}.png
+        year_dir = legacy_dir / str(election_year)
+        year_dir.mkdir(parents=True, exist_ok=True)
+        plt.savefig(year_dir / f"{state}.png")
+
         plt.close()
